@@ -1,0 +1,6 @@
+/.bundle/
+/doc/
+/pkg/
+/tmp/
+.ruby-version
+.ruby-gemset
