@@ -11,6 +11,10 @@ require_silently 'awesome_print'
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'version'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'engine'))
 
+# JSONAPI library classes
+
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'model', 'base'))
+
 module SP
   module Duh
   end
