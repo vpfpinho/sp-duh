@@ -20,7 +20,7 @@ module SP
             end
           end
 
-          def get(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'GET') ; end
+          def get(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'GET') ; end
           def post(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'POST') ; end
           def patch(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'PATCH') ; end
           def delete(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'DELETE') ; end
@@ -30,7 +30,33 @@ module SP
           def service ; @service ; end
           def url(path) ; File.join(service.url, path) ; end
 
-          def escaped_params(params)
+          def url_with_params_for_query(path, params)
+            query = params_for_query(params)
+            query.blank? ? url(path) : url(path) + "?" + query
+          end
+
+          def params_for_query(params)
+            query = ""
+            if !params.blank?
+              case
+                when params.is_a?(Array)
+                  query = params.join('&')
+                when params.is_a?(Hash)
+                  query = params.map do |k,v|
+                    if v.is_a?(String)
+                      "#{k}=\"#{URI.encode(v)}\""
+                    else
+                      "#{k}=#{v}"
+                    end
+                  end.join('&')
+                else
+                  query = params.to_s
+              end
+            end
+            query
+          end
+
+          def params_for_body(params)
             params.blank? ?  '' : params.to_json.gsub("'","''")
           end
 
