@@ -14,8 +14,11 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'engine'))
 # JSONAPI library classes
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'exceptions'))
+# Service classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'service'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'configuration'))
+# Adpater classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'adapters', 'base'))
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'model', 'base'))
 
