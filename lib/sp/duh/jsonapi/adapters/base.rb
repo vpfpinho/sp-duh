@@ -25,6 +25,20 @@ module SP
           def patch(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'PATCH') ; end
           def delete(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'DELETE') ; end
 
+          def unwrap_request
+            unwrap_response(yield)
+          end
+
+          def unwrap_response(response)
+            status = response[0]
+            result = response[1]
+            if status != SP::Duh::JSONAPI::Status::OK
+              errors = result[:errors]
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(status, "#{errors.first[:detail]}")
+            end
+            result
+          end
+
         protected
 
           def service ; @service ; end
