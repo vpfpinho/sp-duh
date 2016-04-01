@@ -1,0 +1,9 @@
+pt:
+  sp-duh:
+    exceptions:
+      jsonapi:
+        service_setup_error: 'O serviço JSONAPI não se encontra disponível porque os recursos não estão devidamente instalados.'
+        service_protocol_error: 'O protocolo definido para acesso ao serviço JSONAPI (%{protocol}) não é suportado. Os protocolos suportados são: %{protocols}.'
+        invalid_resource_configuration_error: 'A configuração de recursos definida no ficheiro %{file} é inválida.'
+        duplicate_resource_error: 'Tentativa de redefinção do recurso %{name}. O recurso já foi definido anteriormente.'
+        save_configuration_error: 'Erro ao gravar a configuração da JSONAPI na base de dados.'
