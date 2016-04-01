@@ -2,6 +2,13 @@ module SP
   module Duh
     module JSONAPI
 
+      VERSION = '1.0'
+
+      class Status
+        OK = 200
+        ERROR = 500
+      end
+
       class Service
 
         def self.protocols ; [ :db, :http ] ; end
