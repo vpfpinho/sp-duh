@@ -99,36 +99,36 @@ module SP
 
         end
 
-        private
+      private
 
-          def self.create_jsonapi_configuration_store(pg_connection)
-            pg_connection.exec %Q[
-              CREATE TABLE IF NOT EXISTS #{Configuration::CONFIGURATION_TABLE_NAME} (
-                prefix varchar(64) PRIMARY KEY,
-                config text NOT NULL
-              );
-            ]
-          end
+        def self.create_jsonapi_configuration_store(pg_connection)
+          pg_connection.exec %Q[
+            CREATE TABLE IF NOT EXISTS #{Configuration::CONFIGURATION_TABLE_NAME} (
+              prefix varchar(64) PRIMARY KEY,
+              config text NOT NULL
+            );
+          ]
+        end
 
-          def definition
-            settings.merge(resources: resources)
-          end
+        def definition
+          settings.merge(resources: resources)
+        end
 
-          def add_resource(resource, configuration_file, replace)
-            raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
-            resource_name = resource.keys[0]
-            _log "JSONAPI::Configuration: Processing resource #{resource_name}"
-            processed = false
-            @resources.each_with_index do |r, i|
-              if r.keys.include?(resource_name)
-                raise Exceptions::DuplicateResourceError.new(name: resource_name) if !replace
-                @resources[i] = resource
-                processed = true
-                break
-              end
+        def add_resource(resource, configuration_file, replace)
+          raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
+          resource_name = resource.keys[0]
+          _log "JSONAPI::Configuration: Processing resource #{resource_name}"
+          processed = false
+          @resources.each_with_index do |r, i|
+            if r.keys.include?(resource_name)
+              raise Exceptions::DuplicateResourceError.new(name: resource_name) if !replace
+              @resources[i] = resource
+              processed = true
+              break
             end
-            @resources << resource if !processed
           end
+          @resources << resource if !processed
+        end
 
       end
 
