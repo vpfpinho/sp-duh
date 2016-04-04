@@ -25,6 +25,9 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'mo
 
 module SP
   module Duh
+    def self.root
+      File.expand_path '../../..', __FILE__
+    end
   end
 end
 

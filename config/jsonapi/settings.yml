@@ -1,0 +1,11 @@
+version: false
+compound: false
+show-links: false
+show-null: true
+type-restriction: true
+attribute-restriction: false
+empty-is-null: true
+page-size: 0
+request-schema: false
+request-table-prefix: false
+pg-order-by: "created_at"

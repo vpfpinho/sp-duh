@@ -5,8 +5,15 @@ module SP
       class Configuration
 
         CONFIGURATION_TABLE_NAME = 'jsonapi_config'
+        DEFAULT_SETTINGS_FILE = 'config/jsonapi/settings.yml'
 
-        def settings ; @settings || {} ; end
+        def settings
+          @settings ||= {}
+          if @settings.blank?
+            add_settings_from_file(File.join(SP::Duh.root, DEFAULT_SETTINGS_FILE))
+          end
+          @settings
+        end
         def resources ; @resources || [] ; end
         def resource_names ; resources.map { |r| r.keys.first } ; end
         def connection ; @pg_connection ; end
