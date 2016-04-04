@@ -11,7 +11,7 @@ module SP
 
           def request(path, schema = '', prefix = '', params = nil, method = 'GET')
             begin
-              wrap_and_do_request(path, schema, prefix, params, method)
+              do_request(path, schema, prefix, params, method)
             rescue Exception => e
               [
                 SP::Duh::JSONAPI::Status::ERROR,
@@ -25,18 +25,10 @@ module SP
           def patch(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'PATCH') ; end
           def delete(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'DELETE') ; end
 
+          alias_method :put, :patch
+
           def unwrap_request
             unwrap_response(yield)
-          end
-
-          def unwrap_response(response)
-            status = response[0]
-            result = response[1]
-            if status != SP::Duh::JSONAPI::Status::OK
-              errors = result[:errors]
-              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(status, "#{errors.first[:detail]}")
-            end
-            result
           end
 
         protected
@@ -74,29 +66,17 @@ module SP
             params.blank? ?  '' : params.to_json.gsub("'","''")
           end
 
-        private
-
-          def wrap_and_do_request(path, schema, prefix, params, method)
-            raw_response = do_request(path, schema, prefix, params, method)
-            if raw_response.is_a? Hash
-              response = HashWithIndifferentAccess.new(raw_response)
-            else
-              response = HashWithIndifferentAccess.new(JSON.parse(raw_response))
-            end
-            [
-              if !response[:errors].blank?
-                response[:errors].map { |error| error[:status].to_i }.max
-              else
-                SP::Duh::JSONAPI::Status::OK
-              end,
-              response
-            ]
-          end
-
-          # do_request MUST be implemented by each specialized adapter, and returns a JSONAPI string or hash; if string, it will be parsed into a hash
+          # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
           def do_request(path, schema, prefix, params, method) ; ; end
 
-          def get_error_response(path, error)
+          # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
+          def unwrap_response(response)
+            status = response[0]
+            result = response[1]
+            result
+          end
+
+          def error_response(path, error)
             {
               errors: [
                 {
@@ -108,6 +88,9 @@ module SP
               jsonapi: { version: SP::Duh::JSONAPI::VERSION }
             }
           end
+
+          # get_error_response MUST be implemented by each specialized adapter, and returns a JSONAPI error result as a string or hash
+          def get_error_response(path, error) ; ; end
 
         end
 

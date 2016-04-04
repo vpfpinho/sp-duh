@@ -3,22 +3,33 @@ module SP
     module JSONAPI
       module Adapters
 
-        class Db < Base
+        class Db < RawDb
 
-        private
+        protected
 
-          # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
-          def do_request(path, schema, prefix, params, method)
-            if method == 'GET'
-              response = service.connection.exec %Q[
-                SELECT * FROM jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', '#{schema}', '#{prefix}');
-              ]
-            else
-              response = service.connection.exec %Q[
-                SELECT * FROM jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', '#{schema}', '#{prefix}');
-              ]
+          def unwrap_response(response)
+            status = response[0]
+            result = response[1]
+            if status != SP::Duh::JSONAPI::Status::OK
+              errors = result[:errors]
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(status, "#{errors.first[:detail]}")
             end
-            response.first['jsonapi'] if response.first
+            result
+          end
+
+          def get_error_response(path, error) ; HashWithIndifferentAccess.new(error_response(path, error)) ; end
+
+          def do_request(path, schema, prefix, params, method)
+            raw_result = do_request_on_the_db(path, schema, prefix, params, method)
+            result = HashWithIndifferentAccess.new(JSON.parse(raw_result))
+            [
+              if !result[:errors].blank?
+                result[:errors].map { |error| error[:status].to_i }.max
+              else
+                SP::Duh::JSONAPI::Status::OK
+              end,
+              result
+            ]
           end
 
         end
