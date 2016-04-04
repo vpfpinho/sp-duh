@@ -75,7 +75,7 @@ module SP
 
           @resources ||= []
 
-          Dir.glob(File.join(folder_name, '*','*.yml')) do |configuration_file|
+          Dir.glob(File.join(folder_name, '*.yml')) do |configuration_file|
             _log "JSONAPI::Configuration: Processing resources from file #{configuration_file}"
             configuration =  YAML.load_file(configuration_file)
             if configuration.is_a? Hash
