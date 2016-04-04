@@ -67,11 +67,17 @@ module SP
           end
         end
 
+        def refresh_from_folder(folder_name)
+          load
+          add_resources_from_folder(folder_name, true)
+          save
+        end
+
         def add_settings_from_file(file_name)
           @settings = YAML.load_file(file_name)
         end
 
-        def add_resources_from_folder(folder_name)
+        def add_resources_from_folder(folder_name, replace = false)
 
           @resources ||= []
 
@@ -79,15 +85,17 @@ module SP
             _log "JSONAPI::Configuration: Processing resources from file #{configuration_file}"
             configuration =  YAML.load_file(configuration_file)
             if configuration.is_a? Hash
-              add_resource(configuration, configuration_file)
+              add_resource(configuration, configuration_file, replace)
             else
               if configuration.is_a? Array
-                configuration.each { |resource| add_resource(resource, configuration_file) }
+                configuration.each { |resource| add_resource(resource, configuration_file, replace) }
               else
                 raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file)
               end
             end
           end
+
+          @resources
 
         end
 
@@ -106,12 +114,20 @@ module SP
             settings.merge(resources: resources)
           end
 
-          def add_resource(resource, configuration_file)
+          def add_resource(resource, configuration_file, replace)
             raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
             resource_name = resource.keys[0]
             _log "JSONAPI::Configuration: Processing resource #{resource_name}"
-            @resources.each { |r| raise Exceptions::DuplicateResourceError.new(name: resource_name) if r.keys.include? resource_name }
-            @resources << resource
+            processed = false
+            @resources.each_with_index do |r, i|
+              if r.keys.include?(resource_name)
+                raise Exceptions::DuplicateResourceError.new(name: resource_name) if !replace
+                @resources[i] = resource
+                processed = true
+                break
+              end
+            end
+            @resources << resource if !processed
           end
 
       end
