@@ -20,12 +20,22 @@ module SP
             end
           end
 
+          def request!(path, schema = '', prefix = '', params = nil, method = 'GET')
+            do_request(path, schema, prefix, params, method)
+          end
+
           def get(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'GET') ; end
           def post(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'POST') ; end
           def patch(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'PATCH') ; end
           def delete(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'DELETE') ; end
 
+          def get!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'GET') ; end
+          def post!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'POST') ; end
+          def patch!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'PATCH') ; end
+          def delete!(path, schema = '', prefix = '') ; request!(path, schema, prefix, nil, 'DELETE') ; end
+
           alias_method :put, :patch
+          alias_method :put!, :patch!
 
           def unwrap_request
             unwrap_response(yield)
