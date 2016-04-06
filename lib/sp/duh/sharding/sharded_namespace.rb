@@ -25,15 +25,7 @@ module SP
           add_sharder(sharder)
         end
 
-        def get_table(shard_ids, table_name)
-          name = table_name
-          ids = shard_ids.reverse
-          sharders.reverse.each_with_index do |sharder, i|
-            name = sharder.get_table(ids[i], name)
-          end
-          name
-        end
-
+        def get_sharded_table(shard_ids, table_name) ; sharders.any? ? sharders.last.get_sharded_table(shard_ids, table_name) : table_name ; end
       end
 
     end
