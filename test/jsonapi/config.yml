@@ -1,0 +1,11 @@
+# Example configuration for testing the JSONAPI HTTP server
+#
+# server:
+#   port: 9001                        # The port at which Sinatra is listening when the tests start
+# database:                           # The PG connection parameters
+#   host: localhost
+#   database: database
+#   username: username
+#   password:
+# jsonapi:
+#   url: https://app.toconline.pt     # The url of the JSONAPI configuration under test
