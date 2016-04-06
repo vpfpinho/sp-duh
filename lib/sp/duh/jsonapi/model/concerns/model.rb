@@ -22,7 +22,6 @@ module SP
               def inspect
                 "#{super}(#{self.attributes.join(', ')})"
               end
-
             end
 
             # Returns the contents of the record as a nicely formatted string.

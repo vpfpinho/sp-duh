@@ -45,21 +45,20 @@ module SP
           get_previous_shard(ids) + shard
         end
 
-      private
+        private
 
-        def get_normalized_ids(ids) ; [ids].compact.flatten ; end
+          def get_normalized_ids(ids) ; [ids].compact.flatten ; end
 
-        def get_previous_shard(shard_ids)
-          if previous
-            ids = get_normalized_ids(shard_ids)
-            if @_fully_qualified_previous_shard.nil? || ids != @_previous_shard_ids
-              @_previous_shard_ids = ids
-              @_fully_qualified_previous_shard = previous.get_fully_qualified_shard(@_previous_shard_ids).to_s
+          def get_previous_shard(shard_ids)
+            if previous
+              ids = get_normalized_ids(shard_ids)
+              if @_fully_qualified_previous_shard.nil? || ids != @_previous_shard_ids
+                @_previous_shard_ids = ids
+                @_fully_qualified_previous_shard = previous.get_fully_qualified_shard(@_previous_shard_ids).to_s
+              end
             end
+            @_fully_qualified_previous_shard.to_s
           end
-          @_fully_qualified_previous_shard.to_s
-        end
-
       end
 
     end

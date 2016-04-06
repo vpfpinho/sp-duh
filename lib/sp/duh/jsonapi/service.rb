@@ -38,20 +38,19 @@ module SP
           Configuration.setup(pg_connection)
         end
 
-      private
+        private
 
-        def self.create_jsonapi_function(pg_connection)
-          pg_connection.exec %Q[
-            CREATE OR REPLACE FUNCTION jsonapi (
-              a_method text,
-              a_uri text,
-              a_body text,
-              a_schema text DEFAULT '',
-              a_prefix text DEFAULT ''
-            ) RETURNS text AS '$libdir/pg_jsonapi.so', 'jsonapi' LANGUAGE C STRICT;
-          ]
-        end
-
+          def self.create_jsonapi_function(pg_connection)
+            pg_connection.exec %Q[
+              CREATE OR REPLACE FUNCTION jsonapi (
+                a_method text,
+                a_uri text,
+                a_body text,
+                a_schema text DEFAULT '',
+                a_prefix text DEFAULT ''
+              ) RETURNS text AS '$libdir/pg_jsonapi.so', 'jsonapi' LANGUAGE C STRICT;
+            ]
+          end
       end
 
     end

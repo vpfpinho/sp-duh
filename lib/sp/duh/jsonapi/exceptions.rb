@@ -26,16 +26,15 @@ module SP
             super(backtrace)
           end
 
-        protected
+          protected
 
-          def type ; self.class.name.sub("SP::Duh::", "").sub("Exceptions::", "") ; end
+            def type ; self.class.name.sub("SP::Duh::", "").sub("Exceptions::", "") ; end
 
-        private
+          private
 
-          def nested_raw_backtrace
-            nested.respond_to?(:raw_backtrace) ? nested.raw_backtrace : nested.backtrace
-          end
-
+            def nested_raw_backtrace
+              nested.respond_to?(:raw_backtrace) ? nested.raw_backtrace : nested.backtrace
+            end
         end
 
         class GenericDetailedError < GenericError
@@ -59,7 +58,6 @@ module SP
             @status = status || 403
             super(message, nested)
           end
-
         end
 
       end
