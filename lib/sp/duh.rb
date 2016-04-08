@@ -26,6 +26,9 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'ad
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'model', 'base'))
 
 # Sharding library classes
+
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'exceptions'))
+# Sharder classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'sharded_namespace'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'sharder'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'schema_sharder'))

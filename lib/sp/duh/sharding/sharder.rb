@@ -17,6 +17,9 @@ module SP
           @table = shards_table
           @id_field = shard_id_field
           @value_field = shard_value_field
+          if @table.blank? || @id_field.blank? || @value_field.blank?
+            raise Exceptions::InvalidShardingDefinitionError.new(namespace: @namespace.namespace.to_s, shard_value_field: @value_field.blank? ? '?' : @value_field.to_s, shard_id_field: @id_field.blank? ? '?' : @id_field.to_s, shard_table: @table.blank? ? '?' : @table)
+          end
         end
 
         def get_shards_table(shard_ids = nil)
@@ -26,12 +29,25 @@ module SP
         def get_shard(shard_ids)
           ids = get_normalized_ids(shard_ids)
           shard_id = ids.slice!(-1)
-          if shard_id.is_a?(String)
-            shard = namespace.connection.exec %Q[ SELECT #{value_field} FROM #{get_shards_table(ids)} WHERE #{id_field} = '#{shard_id}' ]
-          else
-            shard = namespace.connection.exec %Q[ SELECT #{value_field} FROM #{get_shards_table(ids)} WHERE #{id_field} = #{shard_id} ]
+          shard = nil
+          begin
+            shards_table = get_shards_table(ids)
+            if shard_id.blank?
+              raise Exceptions::ShardNotFoundError.new(namespace: namespace.namespace.to_s, shard_table: shards_table, shard_id: shard_id.blank? ? '?' : shard_id.to_s)
+            end
+            if shard_id.is_a?(String)
+              shard = namespace.connection.exec %Q[ SELECT #{value_field} FROM #{shards_table} WHERE #{id_field} = '#{shard_id}' ]
+            else
+              shard = namespace.connection.exec %Q[ SELECT #{value_field} FROM #{shards_table} WHERE #{id_field} = #{shard_id} ]
+            end
+          rescue Exception => e
+            raise Exceptions::InvalidShardingDefinitionError.new(namespace: namespace.namespace.to_s, shard_value_field: value_field.blank? ? '?' : value_field.to_s, shard_id_field: id_field.blank? ? '?' : id_field.to_s, shard_table: shards_table.blank? ? '?' : shards_table)
           end
-          shard.first ? shard.first.values.first : nil
+          if shard.first
+            shard.first.values.first
+          else
+            raise Exceptions::ShardNotFoundError.new(namespace: namespace.namespace.to_s, shard_table: shards_table, shard_id: shard_id.blank? ? '?' : shard_id.to_s)
+          end
         end
 
         def get_sharded_table(shard_ids, table_name)

@@ -7,3 +7,7 @@ pt:
         invalid_resource_configuration_error: 'A configuração de recursos definida no ficheiro %{file} é inválida.'
         duplicate_resource_error: 'Tentativa de redefinção do recurso %{name}. O recurso já foi definido anteriormente.'
         save_configuration_error: 'Erro ao gravar a configuração da JSONAPI na base de dados.'
+      sharding:
+        invalid_sharder_type_error: 'Erro de definição do particionamento para a partição %{namespace}: o tipo de partição pretendido, %{sharder_type}, não se encontra instalado.'
+        invalid_sharding_definition_error: 'Erro de definição do particionamento para a partição %{namespace}: não é possível aceder à estrutura de particionamento definida (%{shard_value_field} na estrutura %{shard_table} pelo id %{shard_id_field}).'
+        shard_not_found_error: 'Não existe a partição com o identificador %{shard_id} na estrutura %{shard_table} da partição %{namespace}.'

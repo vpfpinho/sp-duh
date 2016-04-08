@@ -21,7 +21,12 @@ module SP
         end
 
         def add_new_sharder(sharder_type, shards_table, shard_id_field, shard_value_field)
-          sharder = "SP::Duh::Sharding::#{sharder_type.to_s.camelize}".constantize.new(self, shards_table, shard_id_field, shard_value_field)
+          begin
+            sharder_class = "SP::Duh::Sharding::#{sharder_type.to_s.camelize}".constantize
+          rescue NameError => e
+            raise Exceptions::InvalidSharderTypeError.new(namespace: namespace.to_s, sharder_type: sharder_type.to_s.camelize)
+          end
+          sharder = sharder_class.new(self, shards_table, shard_id_field, shard_value_field)
           add_sharder(sharder)
         end
 
