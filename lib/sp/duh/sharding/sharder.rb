@@ -4,7 +4,7 @@ module SP
 
       class Sharder
 
-        attr_accessor :previous
+        attr_reader :previous
 
         attr_reader :namespace
 
@@ -60,6 +60,10 @@ module SP
           ids.slice!(-1)
           get_previous_shard(ids) + shard
         end
+
+        protected
+
+          attr_writer :previous
 
         private
 

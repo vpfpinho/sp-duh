@@ -16,7 +16,7 @@ module SP
         end
 
         def add_sharder(sharder)
-          sharder.previous = sharders.last
+          sharder.send(:previous=, sharders.last)
           @sharders << sharder
         end
 
