@@ -23,6 +23,8 @@ module SP
           end
         end
 
+        def is_schema_sharder? ; false ; end
+
         def get_shards_table(shard_ids = nil)
           get_previous_shard(shard_ids) + table
         end
