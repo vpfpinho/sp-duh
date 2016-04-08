@@ -5,6 +5,7 @@ module SP
       class Sharder
 
         attr_reader :previous
+        attr_reader :id
 
         attr_reader :namespace
 
@@ -64,6 +65,7 @@ module SP
         protected
 
           attr_writer :previous
+          attr_writer :id
 
         private
 
