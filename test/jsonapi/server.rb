@@ -50,21 +50,9 @@ end
 
 def process_request
   content_type 'application/vnd.api+json', :charset => 'utf-8'
-  begin
-    # Send the sharding parameters in the requesr headers
-    schema = request.env['HTTP_X_JSONAPI_SCHEMA'] || ''
-    prefix = request.env['HTTP_X_JSONAPI_PREFIX'] || ''
-    $jsonapi_adapter.request!(request.fullpath, schema, prefix, request.body.read, request.request_method.upcase)
-  rescue Exception => e
-    puts e
-    puts e.backtrace
-    [ 500,
-      {
-        errors: [ {status: '500', code: e.message } ],
-        links: { self: request.url },
-        jsonapi: { version: '1.0' }
-      }.to_json
-    ]
-  end
+  # Send the sharding parameters in the requesr headers
+  schema = request.env['HTTP_X_JSONAPI_SCHEMA'] || ''
+  prefix = request.env['HTTP_X_JSONAPI_PREFIX'] || ''
+  $jsonapi_adapter.request(request.fullpath, schema, prefix, request.body.read, request.request_method.upcase)
 end
 
