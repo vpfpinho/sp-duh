@@ -14,6 +14,7 @@ module SP
         def self.protocols ; [ :db, :http ] ; end
         def connection ; @pg_connection ; end
         def url ; @url ; end
+        def configuration ; @configuration ; end
 
         def protocol ; @protocol ; end
         def protocol=(value)
@@ -27,6 +28,7 @@ module SP
           @pg_connection = pg_connection
           @url = url
           protocol = :db
+          @configuration = Configuration.new(pg_connection, url)
         end
 
         def self.setup(pg_connection)
