@@ -32,6 +32,12 @@ module SP
   end
 end
 
-def _log(message)
-  Rails.logger.debug "SP::Duh: #{message}"
+def _log(message, prefix = nil)
+  message = message.is_a?(String) ? message : message.inspect
+  prefix = "SP::Duh#{prefix.blank? ? '' : ' [' + prefix + ']'}: "
+  if Rails.logger
+    Rails.logger.debug "#{prefix}#{message}"
+  else
+    puts "#{prefix}#{message}"
+  end
 end

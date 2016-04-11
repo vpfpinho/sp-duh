@@ -126,7 +126,7 @@ module SP
           end
 
           def add_resources_from_file(configuration_file, replace)
-            _log "JSONAPI::Configuration: Processing resources from file #{configuration_file}"
+            _log "Processing resources from file #{configuration_file}", "JSONAPI::Configuration"
             configuration =  YAML.load_file(configuration_file)
             if configuration.is_a? Hash
               add_resource(configuration, configuration_file, replace)
@@ -142,7 +142,7 @@ module SP
           def add_resource(resource, configuration_file, replace)
             raise Exceptions::InvalidResourceConfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
             resource_name = resource.keys[0]
-            _log "JSONAPI::Configuration: Processing resource #{resource_name}"
+            _log "Processing resource #{resource_name}", "JSONAPI::Configuration"
             processed = false
             @resources.each_with_index do |r, i|
               if r.keys.include?(resource_name)
