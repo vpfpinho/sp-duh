@@ -19,9 +19,22 @@ module SP
         def connection ; @pg_connection ; end
         def url ; @url ; end
 
+        def publishers ; @publishers || [] ; end
+
         def initialize(pg_connection, url)
           @pg_connection = pg_connection
           @url = url
+          @publishers = []
+        end
+
+        def add_publisher(publisher)
+          begin
+            publisher = publisher.constantize if publisher.is_a?(String)
+            raise Exceptions::InvalidResourcePublisherError.new(publisher: publisher.name) if !publisher.include?(ResourcePublisher)
+            @publishers << publisher
+          rescue StandardError => e
+            raise Exceptions::InvalidResourcePublisherError.new(publisher: publisher.is_a?(String) ? publisher : publisher.name)
+          end
         end
 
         def self.setup(pg_connection)

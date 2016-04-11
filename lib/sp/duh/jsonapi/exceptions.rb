@@ -8,6 +8,7 @@ module SP
         class ServiceSetupError < SP::Duh::Exceptions::GenericError ; ; end
         class ServiceProtocolError < SP::Duh::Exceptions::GenericDetailedError ; ; end
         class InvalidResourceConfigurationError < SP::Duh::Exceptions::GenericDetailedError ; ; end
+        class InvalidResourcePublisherError < SP::Duh::Exceptions::GenericDetailedError ; ; end
         class DuplicateResourceError < SP::Duh::Exceptions::GenericDetailedError ; ; end
         class SaveConfigurationError < SP::Duh::Exceptions::GenericError ; ; end
 
