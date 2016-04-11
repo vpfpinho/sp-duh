@@ -1,3 +1,5 @@
+require 'rails'
+
 module SP
   module Duh
     class Engine < ::Rails::Engine

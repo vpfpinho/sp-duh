@@ -3,17 +3,8 @@ require 'json'
 require 'yaml'
 require 'pg'
 require 'byebug'
-require 'net/http'
 
-# Required for extra methods added to Ruby types, such as the .blank? method of String
-require 'active_support'
-require 'active_support/core_ext'
-
-require File.join(File.expand_path('../..', File.dirname(__FILE__)), 'lib', 'sp', 'duh', 'jsonapi', 'service')
-require File.join(File.expand_path('../..', File.dirname(__FILE__)), 'lib', 'sp', 'duh', 'jsonapi', 'adapters', 'base')
-require File.join(File.expand_path('../..', File.dirname(__FILE__)), 'lib', 'sp', 'duh', 'jsonapi', 'adapters', 'raw_db')
-
-# Bundler.require
+Bundler.require
 
 configuration = YAML.load_file(File.join(File.expand_path(File.dirname(__FILE__)), 'config.yml'))
 

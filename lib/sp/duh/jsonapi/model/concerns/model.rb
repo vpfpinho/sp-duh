@@ -1,3 +1,6 @@
+require 'active_support'
+require 'active_record'
+
 require 'sp/duh/jsonapi/model/concerns/attributes'
 require 'sp/duh/jsonapi/model/concerns/serialization'
 require 'sp/duh/jsonapi/model/concerns/persistence'
