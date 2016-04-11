@@ -75,27 +75,6 @@ module SP
           @settings = YAML.load_file(file_name)
         end
 
-        def add_resources_from_folder(folder_name, replace = false)
-
-          @resources ||= []
-
-          Dir.glob(File.join(folder_name, '*.yml')) do |configuration_file|
-            _log "JSONAPI::Configuration: Processing resources from file #{configuration_file}"
-            configuration =  YAML.load_file(configuration_file)
-            if configuration.is_a? Hash
-              add_resource(configuration, configuration_file, replace)
-            else
-              if configuration.is_a? Array
-                configuration.each { |resource| add_resource(resource, configuration_file, replace) }
-              else
-                raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file)
-              end
-            end
-          end
-
-          @resources
-        end
-
         private
 
           def self.create_jsonapi_configuration_store(pg_connection)
@@ -109,6 +88,33 @@ module SP
 
           def definition
             settings.merge(resources: resources)
+          end
+
+          def add_resources_from_folder(folder_name, replace)
+            @resources ||= []
+            # First load resources at the root folder
+            Dir.glob(File.join(folder_name, '*.yml')) do |configuration_file|
+              add_resources_from_file(configuration_file, replace)
+            end
+            # Then load resources at the inner folders
+            Dir.glob(File.join(folder_name, '*', '*.yml')) do |configuration_file|
+              add_resources_from_file(configuration_file, replace)
+            end
+            @resources
+          end
+
+          def add_resources_from_file(configuration_file, replace)
+            _log "JSONAPI::Configuration: Processing resources from file #{configuration_file}"
+            configuration =  YAML.load_file(configuration_file)
+            if configuration.is_a? Hash
+              add_resource(configuration, configuration_file, replace)
+            else
+              if configuration.is_a? Array
+                configuration.each { |resource| add_resource(resource, configuration_file, replace) }
+              else
+                raise Exceptions::InvalidResourceConfigurationError.new(file: configuration_file)
+              end
+            end
           end
 
           def add_resource(resource, configuration_file, replace)
