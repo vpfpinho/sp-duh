@@ -10,7 +10,7 @@ module SP
         def settings
           @settings ||= {}
           if @settings.blank?
-            add_settings_from_file(File.join(SP::Duh.root, DEFAULT_SETTINGS_FILE))
+            load_settings_from_file(File.join(SP::Duh.root, DEFAULT_SETTINGS_FILE))
           end
           @settings
         end
@@ -37,7 +37,7 @@ module SP
           return check.first.values.first.to_i > 0
         end
 
-        def load
+        def load_from_database
           @resources = []
           @settings = {}
           configuration = connection.exec %Q[ SELECT config FROM #{Configuration::CONFIGURATION_TABLE_NAME} WHERE prefix = '#{url}' ]
@@ -45,10 +45,8 @@ module SP
             configuration = JSON.parse(configuration.first['config'])
             @resources = configuration['resources']
             @settings = configuration.reject { |k,v| k == 'resources' }
-            return true
-          else
-            return false
           end
+          @resources
         end
 
         def save
@@ -73,7 +71,7 @@ module SP
           save
         end
 
-        def add_settings_from_file(file_name)
+        def load_settings_from_file(file_name)
           @settings = YAML.load_file(file_name)
         end
 
@@ -114,7 +112,7 @@ module SP
           end
 
           def add_resource(resource, configuration_file, replace)
-            raise Exceptions::InvalidResourceconfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
+            raise Exceptions::InvalidResourceConfigurationError.new(file: configuration_file) if (resource.keys.count != 1)
             resource_name = resource.keys[0]
             _log "JSONAPI::Configuration: Processing resource #{resource_name}"
             processed = false
