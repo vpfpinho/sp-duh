@@ -64,6 +64,17 @@ module SP
           get_previous_shard(ids) + shard
         end
 
+        def get_all_shards(shard_ids = nil)
+          ids = get_normalized_ids(shard_ids)
+          begin
+            shards_table = get_shards_table(ids)
+            shards = namespace.connection.exec %Q[ SELECT #{value_field} FROM #{shards_table} ORDER BY #{id_field} ASC ]
+          rescue Exception => e
+            raise Exceptions::InvalidShardingDefinitionError.new(namespace: namespace.namespace.to_s, shard_value_field: value_field.blank? ? '?' : value_field.to_s, shard_id_field: id_field.blank? ? '?' : id_field.to_s, shard_table: shards_table.blank? ? '?' : shards_table)
+          end
+          shards.map { |shard| shard.values.first }
+        end
+
         protected
 
           attr_writer :previous

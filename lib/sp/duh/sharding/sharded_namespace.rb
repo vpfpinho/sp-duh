@@ -33,6 +33,7 @@ module SP
         end
 
         def get_sharded_table(shard_ids, table_name) ; sharders.any? ? sharders.last.get_sharded_table(shard_ids, table_name) : table_name ; end
+        def get_all_root_shards ; sharders.any? ? sharders.first.get_all_shards : [] ; end
       end
 
     end
