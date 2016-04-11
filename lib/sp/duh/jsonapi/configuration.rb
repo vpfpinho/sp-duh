@@ -62,6 +62,15 @@ module SP
           @resources
         end
 
+        def load_from_publishers(replace = false)
+          @resources = []
+          @settings = {}
+          @publishers.each do |publisher|
+             add_resources_from_folder(publisher.jsonapi_resources_root, replace)
+          end
+          @resources
+        end
+
         def save
           begin
             if exists?
@@ -78,10 +87,10 @@ module SP
           end
         end
 
-        def refresh_from_folder(folder_name)
-          load
-          add_resources_from_folder(folder_name, true)
+        def reload!
+          load_from_publishers(true)
           save
+          @resources
         end
 
         def load_settings_from_file(file_name)
