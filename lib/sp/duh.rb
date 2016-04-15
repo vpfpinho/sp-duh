@@ -35,7 +35,7 @@ end
 def _log(message, prefix = nil)
   message = message.is_a?(String) ? message : message.inspect
   prefix = "SP::Duh#{prefix.blank? ? '' : ' [' + prefix + ']'}: "
-  if Rails.logger
+  if Rails.logger && !defined?(Rails::Console)
     Rails.logger.debug "#{prefix}#{message}"
   else
     puts "#{prefix}#{message}"
