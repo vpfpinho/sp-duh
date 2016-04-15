@@ -24,6 +24,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 's
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'sharder'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'schema_sharder'))
 
+# Migrations library classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations', 'migrator'))
+
 module SP
   module Duh
     def self.root
