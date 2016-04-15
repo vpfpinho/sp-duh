@@ -45,3 +45,7 @@ def _log(message, prefix = nil)
     puts "#{prefix}#{message}"
   end
 end
+
+# Configure the I18n module for correct usage when outside a Rails app (tests)
+I18n.load_path += Dir[File.join(SP::Duh.root, 'config', 'locales', '*.{rb,yml}')]
+I18n.default_locale = :pt
