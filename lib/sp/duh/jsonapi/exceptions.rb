@@ -16,12 +16,22 @@ module SP
 
         class GenericModelError < SP::Duh::Exceptions::GenericError
 
+          attr_reader :id
           attr_reader :status
+          attr_reader :result
 
-          def initialize(status, message = nil, nested = $!)
-            @status = status || 403
+          def initialize(result, nested = $!)
+            @result = result
+            errors = get_result_errors()
+            @status = (errors.map { |error| error[:status].to_i }.max) || 403
+            message = errors.first[:detail]
             super(message, nested)
           end
+
+          private
+
+            def get_result_errors() ; (result.is_a?(Hash) ? result : HashWithIndifferentAccess.new(JSON.parse(result)))[:errors] ; end
+
         end
 
       end
