@@ -24,10 +24,7 @@ module SP
             def unwrap_response(response)
               status = response[0]
               result = response[1]
-              if status != SP::Duh::JSONAPI::Status::OK
-                errors = get_result_errors(result)
-                raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(status, "#{errors.first[:detail]}")
-              end
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if status != SP::Duh::JSONAPI::Status::OK
               result
             end
 
@@ -35,19 +32,17 @@ module SP
 
             def do_request(path, schema, prefix, params, method)
               result = do_request_on_the_db(path, schema, prefix, params, method)
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
               [
-                if result.start_with?('{"errors":')
-                  get_result_errors(result).map { |error| error[:status].to_i }.max
-                else
-                  SP::Duh::JSONAPI::Status::OK
-                end,
+                SP::Duh::JSONAPI::Status::OK,
                 result
               ]
             end
 
           private
 
-            def get_result_errors(result) ; HashWithIndifferentAccess.new(JSON.parse(result))[:errors] ; end
+            def is_error?(result) ; result =~ /^\s*{\s*"errors"\s*:/ ; end
+
         end
 
       end

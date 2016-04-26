@@ -12,6 +12,11 @@ module SP
           def request(path, schema = '', prefix = '', params = nil, method = 'GET')
             begin
               do_request(path, schema, prefix, params, method)
+            rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
+              [
+                e.status,
+                e.result
+              ]
             rescue Exception => e
               [
                 SP::Duh::JSONAPI::Status::ERROR,
