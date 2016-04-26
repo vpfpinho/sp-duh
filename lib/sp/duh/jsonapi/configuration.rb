@@ -14,6 +14,11 @@ module SP
           end
           @settings
         end
+
+        def settings=(hash)
+          @settings = hash
+        end
+
         def resources ; @resources || [] ; end
         def resource_names ; resources.map { |r| r.keys.first } ; end
         def connection ; @pg_connection ; end
