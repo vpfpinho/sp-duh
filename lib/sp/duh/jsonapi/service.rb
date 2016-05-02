@@ -31,19 +31,19 @@ module SP
           @configuration = Configuration.new(pg_connection, url)
         end
 
-        def self.setup(pg_connection)
+        def setup
           begin
-            create_jsonapi_function(pg_connection)
+            create_jsonapi_function()
           rescue StandardError => e
             raise Exceptions::ServiceSetupError.new(nil, e)
           end
-          Configuration.setup(pg_connection)
+          configuration.setup()
         end
 
         private
 
-          def self.create_jsonapi_function(pg_connection)
-            pg_connection.exec %Q[
+          def create_jsonapi_function
+            connection.exec %Q[
               CREATE OR REPLACE FUNCTION jsonapi (
                 a_method text,
                 a_uri text,

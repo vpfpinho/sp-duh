@@ -42,9 +42,9 @@ module SP
           end
         end
 
-        def self.setup(pg_connection)
+        def setup
           begin
-            create_jsonapi_configuration_store(pg_connection)
+            create_jsonapi_configuration_store()
           rescue StandardError => e
             raise Exceptions::GenericServiceError.new(e)
           end
@@ -104,8 +104,8 @@ module SP
 
         private
 
-          def self.create_jsonapi_configuration_store(pg_connection)
-            pg_connection.exec %Q[
+          def create_jsonapi_configuration_store
+            connection.exec %Q[
               CREATE TABLE IF NOT EXISTS #{Configuration::CONFIGURATION_TABLE_NAME} (
                 prefix varchar(64) PRIMARY KEY,
                 config text NOT NULL
