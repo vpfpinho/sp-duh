@@ -79,8 +79,7 @@ module SP
                   result = self.adapter.unwrap_request do
                     self.adapter.get(File.join(self.resource_name, id.to_s), self.schema.to_s, self.prefix.to_s, conditions)
                   end
-                  result = result[:data]
-                  jsonapi_result_to_instance(result)
+                  jsonapi_result_to_instance(result[:data], result)
                 end
 
                 def get_all(condition)
@@ -88,19 +87,20 @@ module SP
                   result = self.adapter.unwrap_request do
                     self.adapter.get(self.resource_name, self.schema.to_s, self.prefix.to_s, condition)
                   end
-                  result = result[:data]
                   if result
-                    got = result.map do |item|
-                      jsonapi_result_to_instance(item)
+                    got = result[:data].map do |item|
+                      data = { data: item }
+                      data.merge(included: result[:included]) if result[:included]
+                      jsonapi_result_to_instance(item, data)
                     end
                   end
                   got
                 end
 
-                def jsonapi_result_to_instance(result)
+                def jsonapi_result_to_instance(result, data)
                   if result
                     instance = self.new(result.merge(result[:attributes]).except(:attributes))
-                    instance.send :_data=, result
+                    instance.send :_data=, data
                   end
                   instance
                 end
