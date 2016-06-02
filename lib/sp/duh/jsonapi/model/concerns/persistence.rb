@@ -52,11 +52,13 @@ module SP
               end
 
               def first!(condition = "")
+                condition += (condition.blank? ? "" : "&") + "page[size]=1"
                 get_all(condition).first
               end
 
               def first(condition = "")
                 begin
+                  condition += (condition.blank? ? "" : "&") + "page[size]=1"
                   get_all(condition).first
                 rescue Exception => e
                   nil
