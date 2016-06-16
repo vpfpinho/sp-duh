@@ -1,5 +1,5 @@
 module SP
   module Duh
-    VERSION = "0.1.0"
+    VERSION = File.read(File.expand_path('../../../../VERSION', __FILE__))
   end
 end
