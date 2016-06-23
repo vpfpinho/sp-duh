@@ -1,6 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'version'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'engine'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'exceptions'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'repl'))
 
 # JSONAPI library classes
 
