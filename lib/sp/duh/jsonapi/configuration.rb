@@ -4,7 +4,7 @@ module SP
 
       class Configuration
 
-        CONFIGURATION_TABLE_NAME = 'jsonapi_config'
+        CONFIGURATION_TABLE_NAME = 'public.jsonapi_config'
         DEFAULT_SETTINGS_FILE = 'config/jsonapi/settings.yml'
 
         def settings
