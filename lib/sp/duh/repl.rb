@@ -46,10 +46,18 @@ module SP
         puts @@help
       end
 
+      def save_history
+        File.open(@hist_file, "w") do |f|
+          Readline::HISTORY.to_a[0..100].each do |line|
+            f.write "#{line}\n"
+          end
+        end
+      end
+
       desc 'quit                  -- exit this shell'
       def quit ()
         puts "quiting"
-        File.write(@hist_file, Readline::HISTORY.to_a.join("\n")[0..100])
+        save_history()
         exit
       end
 
@@ -105,7 +113,7 @@ module SP
               fallback_command(buf)
             end
           rescue SystemExit
-            File.write(@hist_file, Readline::HISTORY.to_a.join("\n")[0..100])
+            save_history()
             exit
           rescue Exception => e
             puts e.message
@@ -118,15 +126,20 @@ module SP
       def fallback_command (a_command)
         begin
           if @see_calc and @pg_conn != nil
+            cmd  = a_command.gsub("'", "''")
             calc = @pg_conn.exec(%Q[
-                select json::json from see_evaluate_expression('#{a_command}');
+                SELECT json::json FROM see_evaluate_expression('#{cmd}');
               ])
             if calc.cmd_tuples != 1
               puts "unknown error unable to calculate expression"
             else
               jresult = JSON.parse(calc[0]['json'])
               if jresult['error'] != nil
-                puts jresult['error']
+                if jresult['error']['type'] == 'osal::exception'
+                  puts jresult['error']['trace']['why']
+                else
+                  puts jresult['error']
+                end
               else
                 puts jresult['result']
               end
