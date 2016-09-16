@@ -62,11 +62,17 @@ module SP
           DROP TABLE IF EXISTS pg_see_json_table;
         ]);
       end
-
       begin
         a_pg_conn.exec(%Q[
           CREATE TYPE see_record AS (json text, status text);
-
+        ])
+      rescue Exception => e
+        if a_recreate
+          raise e
+        end
+      end
+      begin
+        a_pg_conn.exec(%Q[
           CREATE OR REPLACE FUNCTION see (
             a_module          text,
             a_version         text,
