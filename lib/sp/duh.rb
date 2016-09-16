@@ -76,6 +76,16 @@ module SP
             a_debug           boolean default false
           ) RETURNS see_record AS '$libdir/pg-see.so', 'see' LANGUAGE C STRICT;
 
+          CREATE OR REPLACE FUNCTION see_payroll (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text,
+            a_clones          text,
+            a_log             text default null,
+            a_debug           boolean default false
+          ) RETURNS see_record AS '$libdir/pg-see.so', 'see_payroll' LANGUAGE C STRICT;
+
           CREATE OR REPLACE FUNCTION see_evaluate_expression (
             a_expression text
           ) RETURNS see_record AS '$libdir/pg-see.so', 'see_evaluate_expression' LANGUAGE C STRICT;
