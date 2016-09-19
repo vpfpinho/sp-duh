@@ -58,7 +58,7 @@ module SP
           DROP FUNCTION IF EXISTS see_evaluate_expression (
             a_expression text
           );
-          DROP TYPE see_record;
+          DROP TYPE IF EXISTS see_record;
           DROP TABLE IF EXISTS pg_see_json_table;
         ]);
       end
