@@ -1609,33 +1609,6 @@ class AddShardingStoredProcedures < ActiveRecord::Migration
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION sharding.recreate_accounting_views (
-          IN company_id       INTEGER
-      )
-      RETURNS void AS $BODY$
-      DECLARE
-          _company_id ALIAS FOR company_id;
-          _schema_name    TEXT;
-          _table_prefix   TEXT;
-      BEGIN
-          RAISE DEBUG 'Recreate views for company_id: %', _company_id;
-
-          -- only search open fiscal years on specified company
-          FOR _schema_name IN EXECUTE 'SELECT schema_name FROM accounting.accounting_companies WHERE company_id = $1' USING _company_id LOOP
-              FOR _table_prefix IN EXECUTE 'SELECT table_prefix FROM '||_schema_name||'.fiscal_years' LOOP
-                  RAISE DEBUG '  => %.%', _schema_name, _table_prefix;
-                  PERFORM accounting.drop_fiscal_year_views(_schema_name, _table_prefix);
-                  PERFORM accounting.create_fiscal_year_views(_schema_name, _table_prefix);
-                  PERFORM accounting.create_fiscal_year_views_triggers(_schema_name, _table_prefix);
-              END LOOP;
-          END LOOP;
-
-          RETURN;
-      END;
-      $BODY$ LANGUAGE 'plpgsql' STABLE;
-    SQL
-
-    execute <<-'SQL'
       CREATE OR REPLACE FUNCTION sharding.shard_table_data(
         IN OUT insert_queries TEXT[],
         IN OUT delete_queries TEXT[],
@@ -2659,7 +2632,6 @@ class AddShardingStoredProcedures < ActiveRecord::Migration
     execute %Q[DROP FUNCTION IF EXISTS sharding.trf_create_company_shard() CASCADE;]
     execute %Q[DROP FUNCTION IF EXISTS sharding.table_exists(TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT[], TEXT[], INTEGER, TEXT, TEXT, TEXT);]
-    execute %Q[DROP FUNCTION IF EXISTS sharding.recreate_accounting_views (INTEGER);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.merge_jsonb_with_arrays_of_keys_and_values(JSONB, TEXT[], TEXT[]);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.get_schema_name_for_table(INTEGER, TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.get_qualified_table_name(INTEGER, TEXT);]
