@@ -7,6 +7,7 @@ module SP
       @@cmds = Array.new
 
       def initialize (a_pg_conn)
+        @see_calc  = false
         @pg_conn   = a_pg_conn
         @hist_file = ".#{@prompt.split('>')[0].strip}_history"
         begin
@@ -49,11 +50,24 @@ module SP
         puts @@help
       end
 
+      def save_history
+        File.open(@hist_file, "w") do |f|
+          Readline::HISTORY.to_a[0..100].each do |line|
+            f.write "#{line}\n"
+          end
+        end
+      end
+
       desc 'quit                  -- exit this shell'
       def quit ()
         puts "quiting"
-        File.write(@hist_file, Readline::HISTORY.to_a.join("\n")[0..100])
+        save_history()
         exit
+      end
+
+      desc 'initsee               -- install pg-see in the database'
+      def initsee (a_recreate = false)
+        SP::Duh.initsee(@pg_conn, a_recreate)
       end
 
       desc 'psql                  -- open sql console'
@@ -80,7 +94,7 @@ module SP
             command = args[0]
             args    = args[1..-1]
             unless cmdset.has_key?(command)
-              puts "#{command} is not a valid command"
+              fallback_command(buf)
               next
             end
             command = cmdset[command]
@@ -100,10 +114,10 @@ module SP
               end
               send(command, *args)
             else
-              puts "#{command} is not a valid command"
+              fallback_command(buf)
             end
           rescue SystemExit
-            File.write(@hist_file, Readline::HISTORY.to_a.join("\n")[0..100])
+            save_history()
             exit
           rescue Exception => e
             puts e.message
@@ -112,7 +126,36 @@ module SP
         end
 
       end
-    end
 
+      def fallback_command (a_command)
+        begin
+          if @see_calc and @pg_conn != nil
+            cmd  = a_command.gsub("'", "''")
+            calc = @pg_conn.exec(%Q[
+                SELECT json::json FROM see_evaluate_expression('#{cmd}');
+              ])
+            if calc.cmd_tuples != 1
+              puts "unknown error unable to calculate expression"
+            else
+              jresult = JSON.parse(calc[0]['json'])
+              if jresult['error'] != nil
+                if jresult['error']['type'] == 'osal::exception'
+                  puts jresult['error']['trace']['why']
+                else
+                  puts jresult['error']
+                end
+              else
+                puts jresult['result']
+              end
+            end
+          else
+            puts "#{a_command} is not a valid command"
+          end
+        rescue => e
+          puts e.message
+        end
+      end
+
+    end
   end
 end

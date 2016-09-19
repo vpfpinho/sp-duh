@@ -21,5 +21,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'awesome_print', '~> 1.6'
   spec.add_development_dependency 'byebug', '~> 8.2'
 
-  spec.add_dependency "rails", ">= 3.2"
+  spec.add_dependency "rails", "~> 3.2"
 end
