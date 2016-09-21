@@ -1,6 +1,6 @@
 class AddExecuteAndLogCountStoredProcedure < ActiveRecord::Migration
   def up
-    execute %Q[CREATE SCHEMA IF NOT EXISTS 'common';]
+    execute %Q[CREATE SCHEMA IF NOT EXISTS common;]
     execute <<-'SQL'
       CREATE OR REPLACE FUNCTION common.execute_and_log_count(
         IN query TEXT,
