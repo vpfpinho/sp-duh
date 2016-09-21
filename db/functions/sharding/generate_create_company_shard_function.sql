@@ -133,14 +133,14 @@ BEGIN
     after_queries := '{}';
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
-    -- RAISE NOTICE 'object_name: %', object_name;
+    -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE NOTICE ''-- [TABLES] TABLE: %1$I'';', object_name);
+    queries := queries || format('RAISE DEBUG ''-- [TABLES] TABLE: %1$I'';', object_name);
 
     query := format('CREATE TABLE %1$s.%2$I (', p_destination_schema_name, object_name);
 
     FOR json_object IN SELECT * FROM json_array_elements(object_data->'columns') LOOP
-      -- RAISE NOTICE 'column: %', json_object;
+      -- RAISE DEBUG 'column: %', json_object;
       col_default_value := NULL;
 
       IF NOT p_use_original_sequence AND (json_object->>'default_value') IS NOT NULL AND json_object->>'default_value' ~ '^nextval\('
@@ -186,7 +186,7 @@ BEGIN
 
     queries := queries || query || after_queries;
 
-    -- raise notice 'query: %', query;
+    -- raise DEBUG 'query: %', query;
   END LOOP;
 
   -----------------------
@@ -200,9 +200,9 @@ BEGIN
     aux := NULL;
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
-    -- RAISE NOTICE 'object_name: %', object_name;
+    -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE NOTICE ''-- [INDEXES] TABLE: %1$I'';', object_name);
+    queries := queries || format('RAISE DEBUG ''-- [INDEXES] TABLE: %1$I'';', object_name);
 
     IF (object_data->>'indexes') IS NOT NULL THEN
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'indexes') LOOP
@@ -227,12 +227,12 @@ BEGIN
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
     schema_name := COALESCE(regexp_replace(qualified_object_name, '^(?:(.+)\.)?(?:.*)$', '\1'), 'public');
-    -- RAISE NOTICE 'object_name: %', object_name;
+    -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE NOTICE ''-- [FOREIGN KEYS] TABLE: %1$I'';', object_name);
+    queries := queries || format('RAISE DEBUG ''-- [FOREIGN KEYS] TABLE: %1$I'';', object_name);
 
     IF (object_data->>'foreign_keys') IS NOT NULL THEN
-      RAISE NOTICE '% foreign_keys: %', object_name, object_data->'foreign_keys';
+      RAISE DEBUG '% foreign_keys: %', object_name, object_data->'foreign_keys';
 
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'foreign_keys') LOOP
 
@@ -263,7 +263,7 @@ BEGIN
           -- aux_array[3] = referenced columns
           aux_array := regexp_matches(json_object->>'definition', 'FOREIGN KEY \((.*?)\) REFERENCES (?:.*?\.)?(.*?)\((.*?)\)');
 
-          -- RAISE NOTICE 'aux_array: %', aux_array;
+          -- RAISE DEBUG 'aux_array: %', aux_array;
 
           queries := queries || sharding.get_create_virtual_foreign_key_to_inherited_table_queries(
             format('%1$s.%2$I', p_destination_schema_name, object_name),
@@ -299,9 +299,9 @@ BEGIN
     aux := NULL;
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
-    -- RAISE NOTICE 'object_name: %', object_name;
+    -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE NOTICE ''-- [TRIGGERS] TABLE: %1$I'';', object_name);
+    queries := queries || format('RAISE DEBUG ''-- [TRIGGERS] TABLE: %1$I'';', object_name);
 
     IF (object_data->>'triggers') IS NOT NULL THEN
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'triggers') LOOP
@@ -329,7 +329,7 @@ BEGIN
     WHERE n.nspname = 'public'
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
-    RAISE NOTICE 'qualified_object_name: %', qualified_object_name;
+    RAISE DEBUG 'qualified_object_name: %', qualified_object_name;
 
     queries := queries || format('CREATE VIEW %1$s.%2$I AS %3$s;',
       p_destination_schema_name,
@@ -430,14 +430,14 @@ BEGIN
         THEN format(E'\n      %1$s', unnest)
         ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
-        -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE NOTICE ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
+        -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE DEBUG ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
         END, E'\n      '
       )
       FROM unnest(queries)
     )
   );
 
-  RAISE NOTICE 'query: %', query;
+  RAISE DEBUG 'query: %', query;
 
   EXECUTE query;
 
