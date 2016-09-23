@@ -1,4 +1,4 @@
-class AddShardingFuntionGetSchemaName < ActiveRecord::Migration
+class AddShardingFunctionGetSchemaName < ActiveRecord::Migration
   def up
     execute <<-'SQL'
       CREATE OR REPLACE FUNCTION sharding.get_sharded_schema_name (
