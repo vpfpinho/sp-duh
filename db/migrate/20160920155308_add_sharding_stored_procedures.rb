@@ -1524,56 +1524,6 @@ class AddShardingStoredProcedures < ActiveRecord::Migration
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION sharding.get_qualified_table_name(
-        IN  company_id      INTEGER,
-        IN  table_name      TEXT,
-        OUT qualified_table TEXT)
-      RETURNS TEXT AS $BODY$
-      DECLARE
-        _company_id ALIAS FOR company_id;
-        _table_name ALIAS FOR table_name;
-      BEGIN
-
-        IF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? _table_name ) THEN
-          qualified_table := 'public.'|| _table_name;
-        ELSE
-          SELECT (CASE WHEN use_sharded_company THEN schema_name ELSE 'public' END )||'.'||_table_name
-            FROM public.companies
-            WHERE id = _company_id
-          INTO qualified_table;
-        END IF;
-
-        RETURN;
-      END;
-      $BODY$ LANGUAGE 'plpgsql';
-    SQL
-
-    execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION sharding.get_schema_name_for_table(
-        IN  company_id          INTEGER,
-        IN  table_name          TEXT,
-        OUT table_schema_name   TEXT)
-      RETURNS TEXT AS $BODY$
-      DECLARE
-        _company_id ALIAS FOR company_id;
-        _table_name ALIAS FOR table_name;
-      BEGIN
-
-        IF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? _table_name ) THEN
-          table_schema_name := 'public';
-        ELSE
-          SELECT CASE WHEN use_sharded_company THEN schema_name ELSE 'public' END
-            FROM public.companies
-            WHERE id = _company_id
-          INTO table_schema_name;
-        END IF;
-
-        RETURN;
-      END;
-      $BODY$ LANGUAGE 'plpgsql';
-    SQL
-
-    execute <<-'SQL'
       CREATE OR REPLACE FUNCTION sharding.merge_jsonb_with_arrays_of_keys_and_values(
         IN p_jsonb JSONB,
         IN p_keys TEXT[],
@@ -2633,8 +2583,6 @@ class AddShardingStoredProcedures < ActiveRecord::Migration
     execute %Q[DROP FUNCTION IF EXISTS sharding.table_exists(TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT[], TEXT[], INTEGER, TEXT, TEXT, TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.merge_jsonb_with_arrays_of_keys_and_values(JSONB, TEXT[], TEXT[]);]
-    execute %Q[DROP FUNCTION IF EXISTS sharding.get_schema_name_for_table(INTEGER, TEXT);]
-    execute %Q[DROP FUNCTION IF EXISTS sharding.get_qualified_table_name(INTEGER, TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.get_create_virtual_polymorphic_foreign_key_queries(TEXT, TEXT, JSONB, TEXT, "char", "char", JSONB);]
     execute %Q[DROP FUNCTION IF EXISTS sharding.get_create_virtual_foreign_key_to_inherited_table_queries(TEXT, TEXT, TEXT, TEXT[], TEXT[], TEXT, "char", "char");]
     execute %Q[DROP FUNCTION IF EXISTS sharding.get_create_virtual_foreign_key_queries(TEXT, TEXT[], TEXT, TEXT[], TEXT, "char", "char");]
