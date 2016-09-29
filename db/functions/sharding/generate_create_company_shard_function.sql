@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
+-- DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
 
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
   IN p_use_original_sequence BOOLEAN DEFAULT TRUE
@@ -24,7 +24,11 @@ DECLARE
   after_queries TEXT[];
   p_destination_schema_name TEXT;
   shard_company_id TEXT;
+  original_search_path TEXT;
 BEGIN
+  SHOW search_path INTO original_search_path;
+  SET search_path TO '';
+
   p_destination_schema_name := '%1$I';
   shard_company_id := '%2$L';
 
@@ -319,6 +323,25 @@ BEGIN
   -- Build the views --
   ---------------------
 
+  SELECT json_object(array_agg(dependent_view), array_agg(depends_on))::JSONB
+    INTO all_objects_data
+  FROM (
+    SELECT
+      dependent_view.relname::TEXT AS dependent_view,
+      array_agg(source_view.relname)::TEXT AS depends_on
+    FROM pg_depend
+      JOIN pg_rewrite ON pg_depend.objid = pg_rewrite.oid
+      JOIN pg_class as dependent_view ON pg_rewrite.ev_class = dependent_view.oid
+      JOIN pg_class as source_view ON pg_depend.refobjid = source_view.oid
+      JOIN pg_namespace dependent_ns ON dependent_ns.oid = dependent_view.relnamespace
+      JOIN pg_namespace source_ns ON source_ns.oid = source_view.relnamespace
+    WHERE source_ns.nspname = 'public'
+      AND dependent_ns.nspname = 'public'
+      AND source_view.relname != dependent_view.relname
+      AND source_view.relkind = 'v'
+    GROUP by dependent_view.relname
+  ) views_dependencies;
+
   FOR qualified_object_name, aux IN
     SELECT
       format('%1$I.%2$I', v.schemaname, v.viewname),
@@ -327,9 +350,32 @@ BEGIN
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
     WHERE n.nspname = 'public'
+      AND NOT all_objects_data ? v.viewname
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
-    RAISE DEBUG 'qualified_object_name: %', qualified_object_name;
+
+    aux := regexp_replace(aux, 'public\.', '', 'g');
+
+    queries := queries || format('CREATE VIEW %1$s.%2$I AS %3$s;',
+      p_destination_schema_name,
+      object_name,
+      aux
+    );
+  END LOOP;
+
+  FOR qualified_object_name, aux IN
+    SELECT
+      format('%1$I.%2$I', v.schemaname, v.viewname),
+      pg_catalog.pg_get_viewdef(c.oid)
+    FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
+    WHERE n.nspname = 'public'
+      AND all_objects_data ? v.viewname
+  LOOP
+    object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+
+    aux := regexp_replace(aux, 'public\.', '', 'g');
 
     queries := queries || format('CREATE VIEW %1$s.%2$I AS %3$s;',
       p_destination_schema_name,
@@ -416,9 +462,17 @@ BEGIN
     DECLARE
       query TEXT;
       seq_nextval BIGINT;
+      previous_search_path TEXT;
+      spath TEXT;
+      rec RECORD;
     BEGIN
+      SHOW search_path INTO previous_search_path;
+      EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
+      SHOW search_path INTO spath;
 
       %1$s
+
+      EXECUTE 'SET search_path to ' || previous_search_path;
 
       RETURN TRUE;
     END;
@@ -426,7 +480,7 @@ BEGIN
   $$,
     (
       SELECT string_agg(
-        CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE)'
+        CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE|SHOW)'
         THEN format(E'\n      %1$s', unnest)
         ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
@@ -440,6 +494,8 @@ BEGIN
   RAISE DEBUG 'query: %', query;
 
   EXECUTE query;
+
+  EXECUTE 'SET search_path TO ''' || original_search_path || '''';
 
   RETURN TRUE;
 -- EXCEPTION
