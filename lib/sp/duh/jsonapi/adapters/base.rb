@@ -5,6 +5,8 @@ module SP
 
         class Base
 
+          def service ; @service ; end
+
           def initialize(service)
             @service = service
           end
@@ -48,7 +50,6 @@ module SP
 
           protected
 
-            def service ; @service ; end
             def url(path) ; File.join(service.url, path) ; end
 
             def url_with_params_for_query(path, params)
