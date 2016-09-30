@@ -136,7 +136,45 @@ class AddFunctionsToConnectToRedisServer < ActiveRecord::Migration
         RETURN triggering_record;
       END;
       $BODY$ LANGUAGE plpgsql;
+    SQL
 
+    execute <<-'SQL'
+      CREATE OR REPLACE FUNCTION redis.delete_trigger_to_delete_cache_keys(
+        IN server_name      TEXT,
+        IN table_name       TEXT
+      )
+      RETURNS BOOLEAN AS $BODY$
+      DECLARE
+        table_schema TEXT;
+      BEGIN
+
+        table_schema := COALESCE(NULLIF(regexp_replace(table_name, '^(?:(.*?\.))?(.*?)$', '\1'), ''), 'public');
+        table_name := regexp_replace(table_name, '^(?:.*?\.)?(.*?)$', '\1');
+
+        EXECUTE format($$
+          DROP TRIGGER trg_clear_redis_cache_from_%1$s ON %2$I.%3$I;
+        $$, server_name, table_schema, table_name);
+
+        RETURN TRUE;
+      END;
+      $BODY$ LANGUAGE plpgsql;
+    SQL
+
+    execute <<-'SQL'
+      CREATE OR REPLACE FUNCTION redis.delete_redis_server_connection(
+        IN server_name      TEXT
+      )
+      RETURNS BOOLEAN AS $BODY$
+      DECLARE
+      BEGIN
+        -- Create the server
+        EXECUTE format($$
+          DROP SERVER IF EXISTS %1$s_redis_server CASCADE;
+        $$, server_name);
+
+        RETURN TRUE;
+      END;
+      $BODY$ LANGUAGE plpgsql;
     SQL
   end
 
@@ -144,5 +182,7 @@ class AddFunctionsToConnectToRedisServer < ActiveRecord::Migration
     execute %Q[DROP FUNCTION IF EXISTS redis.trf_delete_affected_optimizations_cache_entries() CASCADE;]
     execute %Q[DROP FUNCTION IF EXISTS redis.create_trigger_to_delete_cache_keys(TEXT, TEXT, TEXT);]
     execute %Q[DROP FUNCTION IF EXISTS redis.create_redis_server_connection(TEXT, TEXT, INTEGER, INTEGER);]
+    execute %Q[DROP FUNCTION IF EXISTS redis.delete_trigger_to_delete_cache_keys(TEXT, TEXT);]
+    execute %Q[DROP FUNCTION IF EXISTS redis.delete_redis_server_connection(TEXT);]
   end
 end
