@@ -28,6 +28,14 @@ module SP
             super(message, nested)
           end
 
+          def inspect()
+            description = super()
+            errors = get_result_errors()
+            description = description + " (#{@result.to_json})" if errors.length != 1
+            description = description + " (#{errors.first[:meta]['internal-error']})" if errors.length == 1 && errors.first[:meta]
+            description
+          end
+
           private
 
             def get_result_errors() ; (result.is_a?(Hash) ? result : HashWithIndifferentAccess.new(JSON.parse(result)))[:errors] ; end
