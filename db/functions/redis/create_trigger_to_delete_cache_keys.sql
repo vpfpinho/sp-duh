@@ -7,9 +7,9 @@ RETURNS BOOLEAN AS $BODY$
 DECLARE
   table_schema TEXT;
 BEGIN
-
-  table_schema := COALESCE(NULLIF(regexp_replace(table_name, '^(?:(.*?\.))?(.*?)$', '\1'), ''), 'public');
-  table_name := regexp_replace(table_name, '^(?:.*?\.)?(.*?)$', '\1');
+  SELECT "name", "schema"
+  FROM common.get_table_schema_and_name(table_name)
+  INTO table_name, table_schema;
 
   EXECUTE format($$
     CREATE CONSTRAINT TRIGGER trg_clear_redis_cache_from_%1$s
