@@ -19,6 +19,15 @@ BEGIN
     p_where_clause := 'company_id = %3$L';
   END IF;
 
+  -- Execute the query directly
+  -- p_insert_queries := p_insert_queries || format(
+  --   'INSERT INTO %1$I.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ');',
+  --   p_schema_name,
+  --   p_table,
+  --   p_company_id
+  -- );
+
+  -- Execute the query outputting the affected record count
   p_insert_queries := p_insert_queries || regexp_replace(format('
     SELECT common.execute_and_log_count(
       ''INSERT INTO %1$I.%2$I (SELECT * FROM ONLY public.%2$I WHERE %4$s)'',
@@ -41,6 +50,16 @@ BEGIN
   p_insert_queries := p_insert_queries || query;
 
   -- And build the delete sharded records from the original table query (only, not from new inherited), to return from the function
+
+  -- Execute the query directly
+  -- p_delete_queries := array_prepend(format(
+  --   'DELETE FROM ONLY public.%2$I WHERE ' || p_where_clause || ';',
+  --   p_schema_name,
+  --   p_table,
+  --   p_company_id
+  -- ), p_delete_queries);
+
+  -- Execute the query outputting the affected record count
   p_delete_queries := array_prepend(regexp_replace(format('
     SELECT common.execute_and_log_count(
       ''DELETE FROM ONLY public.%2$I WHERE %4$s'',
