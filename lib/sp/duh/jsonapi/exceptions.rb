@@ -28,11 +28,18 @@ module SP
             super(message, nested)
           end
 
+          def internal_error
+            errors = get_result_errors()
+            if errors.length != 1
+              @result.to_json
+            else
+              errors.first[:meta]['internal-error'] if errors.first[:meta]
+            end
+          end
+
           def inspect()
             description = super()
-            errors = get_result_errors()
-            description = description + " (#{@result.to_json})" if errors.length != 1
-            description = description + " (#{errors.first[:meta]['internal-error']})" if errors.length == 1 && errors.first[:meta]
+            description = description + " (#{internal_error})" if internal_error
             description
           end
 

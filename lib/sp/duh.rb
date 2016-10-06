@@ -39,6 +39,91 @@ module SP
       File.expand_path '../../..', __FILE__
     end
 
+    def self.initsee (a_pg_conn, a_recreate = false)
+      if a_recreate
+        a_pg_conn.exec(%Q[
+
+          DROP FUNCTION IF EXISTS see (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text
+          );
+
+          DROP FUNCTION IF EXISTS see (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text,
+            a_log             text,
+            a_debug           boolean
+          );
+
+          DROP FUNCTION IF EXISTS see_evaluate_expression (
+            a_expression text
+          );
+          DROP TYPE IF EXISTS see_record;
+          DROP TABLE IF EXISTS pg_see_json_table;
+        ]);
+      end
+      begin
+        a_pg_conn.exec(%Q[
+          CREATE TYPE see_record AS (json text, status text);
+        ])
+      rescue Exception => e
+        if a_recreate
+          raise e
+        end
+      end
+      begin
+        a_pg_conn.exec(%Q[
+          CREATE OR REPLACE FUNCTION see (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text,
+            a_log             text default null,
+            a_debug           boolean default false
+          ) RETURNS see_record AS '$libdir/pg-see.so', 'see' LANGUAGE C STRICT;
+
+          CREATE OR REPLACE FUNCTION see_payroll (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text,
+            a_clones          text,
+            a_log             text default null,
+            a_debug           boolean default false
+          ) RETURNS see_record AS '$libdir/pg-see.so', 'see_payroll' LANGUAGE C STRICT;
+
+          CREATE OR REPLACE FUNCTION see_evaluate_expression (
+            a_expression text
+          ) RETURNS see_record AS '$libdir/pg-see.so', 'see_evaluate_expression' LANGUAGE C STRICT;
+
+          ])
+      rescue Exception => e
+        if a_recreate
+          raise e
+        end
+      end
+      begin
+        a_pg_conn.exec(%Q[
+           CREATE TABLE pg_see_json_table (
+             namespace  character varying(255),
+             table_name character varying(255),
+             version    character varying(20),
+             is_model   boolean NOT NULL DEFAULT FALSE,
+             json       text,
+             CONSTRAINT pg_see_json_table_pkey PRIMARY KEY(namespace, table_name, version)
+           );
+        ])
+      rescue => e
+        if a_recreate
+          raise e
+        end
+      end
+
+    end
   end
 end
 
