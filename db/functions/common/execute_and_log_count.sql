@@ -11,22 +11,25 @@ DECLARE
   message TEXT;
 BEGIN
   EXECUTE query;
-  GET DIAGNOSTICS total_affected_records = ROW_COUNT;
 
-  IF message_template IS NULL THEN
-    message_template := 'Affected rows: %';
+  IF log_level IS NOT NULL THEN
+    GET DIAGNOSTICS total_affected_records = ROW_COUNT;
+
+    IF message_template IS NULL THEN
+      message_template := 'Affected rows: %';
+    END IF;
+
+    message_template := regexp_replace(regexp_replace(regexp_replace(message_template, '%%', '~~'), '%', '%s'), '~~', '%%');
+
+    CASE upper(log_level)
+      WHEN 'DEBUG'      THEN RAISE DEBUG '%', format(message_template, total_affected_records);
+      WHEN 'LOG'        THEN RAISE LOG '%', format(message_template, total_affected_records);
+      WHEN 'INFO'       THEN RAISE INFO '%', format(message_template, total_affected_records);
+      WHEN 'NOTICE'     THEN RAISE NOTICE '%', format(message_template, total_affected_records);
+      WHEN 'WARNING'    THEN RAISE WARNING '%', format(message_template, total_affected_records);
+      WHEN 'EXCEPTION'  THEN RAISE EXCEPTION '%', format(message_template, total_affected_records);
+    END CASE;
   END IF;
-
-  message_template := regexp_replace(regexp_replace(regexp_replace(message_template, '%%', '~~'), '%', '%s'), '~~', '%%');
-
-  CASE upper(log_level)
-    WHEN 'DEBUG'      THEN RAISE DEBUG '%', format(message_template, total_affected_records);
-    WHEN 'LOG'        THEN RAISE LOG '%', format(message_template, total_affected_records);
-    WHEN 'INFO'       THEN RAISE INFO '%', format(message_template, total_affected_records);
-    WHEN 'NOTICE'     THEN RAISE NOTICE '%', format(message_template, total_affected_records);
-    WHEN 'WARNING'    THEN RAISE WARNING '%', format(message_template, total_affected_records);
-    WHEN 'EXCEPTION'  THEN RAISE EXCEPTION '%', format(message_template, total_affected_records);
-  END CASE;
 
   RETURN;
 END;
