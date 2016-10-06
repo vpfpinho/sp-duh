@@ -57,16 +57,6 @@ class InstallSee < ActiveRecord::Migration
         a_debug           boolean
       );
 
-      DROP FUNCTION IF EXISTS see_payroll (
-        a_module          text,
-        a_version         text,
-        a_query_map       text,
-        a_calc_parameters text,
-        a_clones          text,
-        a_log             text,
-        a_debug           boolean
-      );
-
       DROP FUNCTION IF EXISTS see_evaluate_expression (
         a_expression text
       );
