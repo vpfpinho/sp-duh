@@ -48,11 +48,3 @@ BEGIN
   RETURN triggering_record;
 END;
 $BODY$ LANGUAGE plpgsql;
-
-
-SELECT redis.create_redis_server_connection('optimizations');
-SELECT redis.create_trigger_to_delete_cache_keys('optimizations', 'companies', 'company-data:$id$:*');
-
--- UPDATE companies SET use_sharded_company = use_sharded_company WHERE id = 20289;
-
-ROLLBACK;
