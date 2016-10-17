@@ -14,6 +14,10 @@ BEGIN
     DROP TRIGGER trg_clear_redis_cache_from_%1$s ON %2$I.%3$I;
   $$, server_name, table_schema, table_name);
 
+  EXECUTE format($$
+    DROP TRIGGER trg_mark_redis_cache_to_clear_from_%1$s ON %2$I.%3$I;
+  $$, server_name, table_schema, table_name);
+
   RETURN TRUE;
 END;
 $BODY$ LANGUAGE plpgsql;
