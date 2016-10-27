@@ -26,14 +26,14 @@ BEGIN
   FOR referenced_table IN SELECT * FROM unnest(referenced_tables) LOOP
     -- If we're working on the companies table, get the schema name directly
     IF TG_TABLE_NAME = 'companies' THEN
-      IF NEW.use_sharded_company THEN
-        company_schema_name := NEW.schema_name;
-      ELSE
+      IF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? referenced_table ) THEN
         company_schema_name := 'public';
+      ELSE
+        company_schema_name := NEW.schema_name;
       END IF;
     ELSE
       -- Otherwise get it from the company via the company_id column
-      company_schema_name := sharding.get_schema_name_for_table(NEW.company_id, referencing_table);
+      company_schema_name := sharding.get_schema_name_for_table(NEW.company_id, referenced_table);
     END IF;
 
     record_existence_check_data := (
