@@ -62,11 +62,12 @@ module SP
               if !params.blank?
                 case
                   when params.is_a?(Array)
-                    query = params.join('&')
+                    # query = params.join('&')
+                    query = params.map{ |v| URI.encode(v).gsub("'","''") }.join('&')
                   when params.is_a?(Hash)
                     query = params.map do |k,v|
                       if v.is_a?(String)
-                        "#{k}=\"#{URI.encode(v)}\""
+                        "#{k}=\"#{URI.encode(v).gsub("'","''")}\""
                       else
                         "#{k}=#{v}"
                       end
