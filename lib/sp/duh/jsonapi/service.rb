@@ -50,7 +50,7 @@ module SP
                 a_body text,
                 a_schema text DEFAULT '',
                 a_prefix text DEFAULT ''
-              ) RETURNS text AS '$libdir/pg_jsonapi.so', 'jsonapi' LANGUAGE C STRICT;
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C STRICT;
             ]
           end
       end
