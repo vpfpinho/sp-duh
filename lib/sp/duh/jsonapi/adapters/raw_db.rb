@@ -11,11 +11,11 @@ module SP
             def do_request_on_the_db(path, schema, prefix, params, method)
               if method == 'GET'
                 response = service.connection.exec %Q[
-                  SELECT * FROM jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', '#{schema}', '#{prefix}');
+                  SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', '#{schema}', '#{prefix}');
                 ]
               else
                 response = service.connection.exec %Q[
-                  SELECT * FROM jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', '#{schema}', '#{prefix}');
+                  SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', '#{schema}', '#{prefix}');
                 ]
               end
               response.first['jsonapi'] if response.first

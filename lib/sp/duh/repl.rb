@@ -41,6 +41,10 @@ module SP
         line
       end
 
+      def check_db ()
+        raise "can't do that! database connection is not valid" if @pg_conn.nil?
+      end
+
       desc 'help                  -- you are looking at it'
       def help ()
         puts @@help
@@ -68,7 +72,7 @@ module SP
 
       desc 'psql                  -- open sql console'
       def psql ()
-        system ("psql --user=#{@pg_conn.user} --host=#{@pg_conn.host} #{@pg_conn.db}")
+        system("psql --user=#{@pg_conn.user} --host=#{@pg_conn.host} #{@pg_conn.db}")
       end
 
       desc 'open <file>           -- open file with system command'

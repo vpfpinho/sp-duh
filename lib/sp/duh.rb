@@ -14,6 +14,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'co
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'adapters', 'base'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'adapters', 'raw_db'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'adapters', 'db'))
+# PG Adapters
+require 'pg'
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'adapters', 'pg', 'text_decoder', 'json'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'adapters', 'pg', 'text_encoder', 'json'))
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'model', 'base'))
 
