@@ -9,14 +9,6 @@ class CreateCommonFunctionExistsStoredProcedure < ActiveRecord::Migration
         schema_name TEXT;
         function_name TEXT;
       BEGIN
-
-        SELECT COUNT(*) INTO result
-          FROM pg_catalog.pg_proc p
-          JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-         WHERE p.proname = function_name
-           AND n.nspname = schema_name;
-
-
         IF (SELECT EXISTS (SELECT 1 FROM regexp_matches(p_function_name, '^.+\..+$'))) THEN
           SELECT (regexp_matches(p_function_name, '^(.+?)\..+?'))[1] INTO schema_name;
           SELECT regexp_replace(p_function_name, schema_name || '.', '') INTO function_name;
