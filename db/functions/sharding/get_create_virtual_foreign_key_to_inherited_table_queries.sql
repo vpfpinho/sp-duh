@@ -179,12 +179,11 @@ BEGIN
       ));
 
     ELSE -- If NULL, default to NO ACTION
-      -- Create the after update trigger on the parent referenced table to prevent changing the key fields if they're being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before update trigger on the parent referenced table to prevent changing the key fields if they're being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %18$I
-           AFTER UPDATE OF %3$s ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %18$I
+           BEFORE UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s');
@@ -192,12 +191,11 @@ BEGIN
         VARIADIC aux_array
       ));
 
-      -- Create the after update trigger on the child referenced table to prevent changing the key fields if they're being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before update trigger on the child referenced table to prevent changing the key fields if they're being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %18$I
-           AFTER UPDATE OF %3$s ON %5$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %18$I
+           BEFORE UPDATE OF %3$s ON %5$s
            FOR EACH ROW
               WHEN (%11$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s');
@@ -276,10 +274,10 @@ BEGIN
       ));
 
     WHEN 'r' THEN -- RESTRICT
-      -- Create the after delete trigger on the parent referenced table to prevent deleting the rows if it's being referenced
+      -- Create the before delete trigger on the parent referenced table to prevent deleting the row if it's being referenced
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %22$I
-           AFTER DELETE ON %2$s
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s');
@@ -287,10 +285,10 @@ BEGIN
         VARIADIC aux_array
       ));
 
-      -- Create the after delete trigger on the child referenced table to prevent deleting the rows if it's being referenced
+      -- Create the before delete trigger on the child referenced table to prevent deleting the row if it's being referenced
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %22$I
-           AFTER DELETE ON %5$s
+           BEFORE DELETE ON %5$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s');
@@ -299,12 +297,11 @@ BEGIN
       ));
 
     ELSE -- If NULL, default to NO ACTION
-      -- Create the after delete trigger on the parent referenced table to prevent deleting the rows if it's being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before delete trigger on the parent referenced table to prevent deleting the row if it's being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %23$I
-           AFTER DELETE ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %23$I
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s');
@@ -312,12 +309,11 @@ BEGIN
         VARIADIC aux_array
       ));
 
-      -- Create the after delete trigger on the child referenced table to prevent deleting the rows if it's being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before delete trigger on the child referenced table to prevent deleting the row if it's being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %23$I
-           AFTER DELETE ON %5$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %23$I
+           BEFORE DELETE ON %5$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s');

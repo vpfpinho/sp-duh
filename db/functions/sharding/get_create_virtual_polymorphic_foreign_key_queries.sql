@@ -109,7 +109,7 @@ BEGIN
   -- Check the ON UPDATE clause of the foreign key
   CASE p_update_condition
     WHEN 'c' THEN -- CASCADE
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to cascade the change to any referencing field
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %17$I
            AFTER UPDATE OF %3$s ON %2$s
@@ -121,7 +121,7 @@ BEGIN
       ));
 
     WHEN 'n' THEN -- SET NULL
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to set any referencing records to NULL
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %18$I
            AFTER UPDATE OF %3$s ON %2$s
@@ -133,7 +133,7 @@ BEGIN
       ));
 
     WHEN 'd' THEN -- SET DEFAULT
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to set any referencing records to their default value
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %19$I
            AFTER UPDATE OF %3$s ON %2$s
@@ -160,9 +160,8 @@ BEGIN
       -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
       -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %21$I
-           AFTER UPDATE OF %3$s ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %21$I
+           BEFORE UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%7$s', '%6$s', %16$L);
@@ -174,7 +173,7 @@ BEGIN
   -- Check the ON DELETE clause of the foreign key
   CASE p_delete_condition
     WHEN 'c' THEN -- CASCADE
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to cascade the deletion to referenced rows
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %22$I
            AFTER DELETE ON %2$s
@@ -185,7 +184,7 @@ BEGIN
       ));
 
     WHEN 'n' THEN -- SET NULL
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to set any referencing records to NULL
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %23$I
            AFTER DELETE ON %2$s
@@ -197,7 +196,7 @@ BEGIN
       ));
 
     WHEN 'd' THEN -- SET DEFAULT
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to set any referencing records to their default value
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %24$I
            AFTER DELETE ON %2$s
@@ -209,10 +208,10 @@ BEGIN
       ));
 
     WHEN 'r' THEN -- RESTRICT
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the before delete trigger on the referenced table to prevent deleting the row if the key fields are being referenced
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %25$I
-           AFTER DELETE ON %2$s
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
@@ -221,12 +220,11 @@ BEGIN
       ));
 
     ELSE -- If NULL, default to NO ACTION
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %26$I
-           AFTER DELETE ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %26$I
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
