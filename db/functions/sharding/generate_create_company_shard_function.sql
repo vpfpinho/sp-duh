@@ -119,7 +119,7 @@ BEGIN
     WHERE ta.schemaname = 'public'
       AND (NOT t.tgisinternal OR (t.tgisinternal AND t.tgenabled = 'D'))
       AND t.tgname != 'trg_prevent_insert_or_update_on_sharded_companies' -- Don't copy the prevent trigger for sharded companies
-      AND t.tgname !~* '^trg_vfk(?:i|p)?r' -- Don't copy the virtual foreign key reverse triggers
+      AND t.tgname !~* '^trg_vfk(?:i|p)?' -- Don't copy the virtual foreign key triggers
     GROUP BY ta.schemaname, ta.tablename
   )
   SELECT
