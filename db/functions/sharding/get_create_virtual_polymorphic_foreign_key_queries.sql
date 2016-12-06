@@ -115,7 +115,7 @@ BEGIN
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_cascade('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_cascade('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -127,7 +127,7 @@ BEGIN
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_null('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_null('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -139,7 +139,7 @@ BEGIN
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_default('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_default('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -151,7 +151,7 @@ BEGIN
            BEFORE UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
       ));
@@ -165,7 +165,7 @@ BEGIN
            DEFERRABLE INITIALLY DEFERRED
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
       ));
@@ -179,7 +179,7 @@ BEGIN
         $$CREATE TRIGGER %22$I
            AFTER DELETE ON %2$s
            FOR EACH ROW
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_cascade('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_cascade('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -191,7 +191,7 @@ BEGIN
            AFTER DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_null('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_null('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -203,7 +203,7 @@ BEGIN
            AFTER DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_default('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_default('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
       ));
@@ -215,7 +215,7 @@ BEGIN
            AFTER DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
       ));
@@ -229,7 +229,7 @@ BEGIN
            DEFERRABLE INITIALLY DEFERRED
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
       ));
