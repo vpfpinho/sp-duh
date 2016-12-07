@@ -99,7 +99,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_cascade('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[14]);
 
     WHEN 'n' THEN -- SET NULL
       -- Create the after update trigger on the referenced table to set any referencing fields to NULL
@@ -111,7 +111,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_null('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[15]);
 
     WHEN 'd' THEN -- SET DEFAULT
       -- Create the after update trigger on the referenced table to set any referencing fields to their default value
@@ -123,7 +123,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_default('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[16]);
 
     WHEN 'r' THEN -- RESTRICT
       -- Create the before update trigger on the referenced table to prevent changing the key fields if they're being referenced
@@ -135,7 +135,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[17]);
 
     ELSE -- If NULL, default to NO ACTION
       -- Create the before update trigger on the referenced table to prevent changing the key fields if they're being referenced
@@ -148,7 +148,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[18]);
   END CASE;
 
   -- Check the ON DELETE clause of the foreign key
@@ -162,7 +162,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_cascade('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[19]);
 
     WHEN 'n' THEN -- SET NULL
       -- Create the after delete trigger on the referenced table to set any referencing fields to NULL
@@ -174,7 +174,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_null('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[20]);
 
     WHEN 'd' THEN -- SET DEFAULT
       -- Create the after delete trigger on the referenced table to set any referencing fields to their default values
@@ -186,7 +186,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_default('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[21]);
 
     WHEN 'r' THEN -- RESTRICT
       -- Create the before delete trigger on the referenced table to prevent deleting the record if the key fields are being referenced
@@ -198,7 +198,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[22]);
 
     ELSE -- If NULL, default to NO ACTION
       -- Create the before delete trigger on the referenced table to prevent deleting the record if the key fields are being referenced
@@ -211,7 +211,7 @@ BEGIN
            EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%27$s', '%6$s');
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[23]);
   END CASE;
 
   RETURN queries;

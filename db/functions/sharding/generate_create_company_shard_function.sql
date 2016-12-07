@@ -418,20 +418,29 @@ BEGIN
 
   query := format($$
     CREATE OR REPLACE FUNCTION sharding.create_company_shard(
-      IN p_company_id INTEGER,
-      IN p_company_schema_name TEXT
+      IN p_company_id           INTEGER,
+      IN p_company_schema_name  TEXT
     )
     RETURNS BOOLEAN AS $FUNCTION_BODY$
     DECLARE
-      query TEXT;
-      seq_nextval BIGINT;
-      previous_search_path TEXT;
-      spath TEXT;
-      rec RECORD;
+      query                   TEXT;
+      seq_nextval             BIGINT;
+      previous_search_path    TEXT;
+      spath                   TEXT;
+      rec                     RECORD;
+      current_public_triggers TEXT[];
     BEGIN
       SHOW search_path INTO previous_search_path;
       EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
       SHOW search_path INTO spath;
+
+      SELECT array_agg('public.' || c.relname || '::' || t.tgname)
+      FROM pg_trigger t
+        JOIN pg_class c ON t.tgrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+      WHERE NOT t.tgisinternal
+        AND n.nspname = 'public'
+      INTO current_public_triggers;
 
       %1$s
 
@@ -445,7 +454,7 @@ BEGIN
       SELECT string_agg(
         CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE|SHOW)'
         THEN format(E'\n      %1$s', unnest)
-        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id);', regexp_replace(unnest, '\s+', ' ', 'g'))
+        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id, current_public_triggers);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
         -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE DEBUG ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
         END, E'\n      '
