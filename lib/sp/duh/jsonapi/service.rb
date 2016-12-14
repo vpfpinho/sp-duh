@@ -45,12 +45,13 @@ module SP
           def create_jsonapi_function
             connection.exec %Q[
               CREATE OR REPLACE FUNCTION jsonapi (
-                a_method text,
-                a_uri text,
-                a_body text,
-                a_schema text DEFAULT '',
-                a_prefix text DEFAULT ''
-              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C STRICT;
+                method         text,
+                uri            text,
+                body           text DEFAULT NULL,
+                schema         text DEFAULT NULL,
+                prefix         text DEFAULT NULL,
+                sharded_schema text DEFAULT NULL
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
             ]
           end
       end
