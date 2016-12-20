@@ -124,7 +124,7 @@ module SP
              version     character varying(20),
              is_model    boolean NOT NULL DEFAULT FALSE,
              json        text,
-             commit_hash character varying(40),
+             commit_hash character varying(255),
              CONSTRAINT pg_see_json_table_pkey PRIMARY KEY(namespace, table_name, version)
            );
         ])
