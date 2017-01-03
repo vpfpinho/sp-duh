@@ -19,6 +19,12 @@ BEGIN
   referenced_columns := TG_ARGV[2];
   trigger_condition := TG_ARGV[3];
 
+  IF TG_TABLE_NAME = 'users' THEN
+    IF OLD.company_id IS NULL THEN
+      RETURN OLD;
+    END IF;
+  END IF;
+
   IF trigger_condition IS NOT NULL THEN
     trigger_condition := sharding.merge_jsonb_with_arrays_of_keys_and_values(trigger_condition, referencing_columns, referenced_values);
   END IF;

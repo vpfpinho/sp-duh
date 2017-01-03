@@ -1,4 +1,4 @@
--- DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
+DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
 
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
   IN p_use_original_sequence BOOLEAN DEFAULT TRUE
@@ -36,6 +36,19 @@ BEGIN
   p_use_original_sequence := TRUE;
 
   auxiliary_table_information = sharding.get_auxiliary_table_information();
+
+  queries := queries || format($$
+    INSERT INTO sharding.sharding_statistics (sharding_key, structure_sharding_started_at) VALUES (%1$s, clock_timestamp())
+  $$, shard_company_id);
+
+  -------------------------------------------------------------------------------------------------------------
+  -- Invoke the sharding.get_queries_to_run_before_sharding_company_structure function if set by the project --
+  -------------------------------------------------------------------------------------------------------------
+
+  IF common.function_exists('sharding.get_queries_to_run_before_sharding_company_structure') THEN
+    queries := queries || (SELECT sharding.get_queries_to_run_before_sharding_company_structure(auxiliary_table_information));
+  END IF;
+
 
   -- Get the necessary data to create the new tables, indexes, stored procedures and triggers
   WITH table_columns AS (
@@ -106,7 +119,7 @@ BEGIN
     WHERE ta.schemaname = 'public'
       AND (NOT t.tgisinternal OR (t.tgisinternal AND t.tgenabled = 'D'))
       AND t.tgname != 'trg_prevent_insert_or_update_on_sharded_companies' -- Don't copy the prevent trigger for sharded companies
-      AND t.tgname !~* '^trg_vfk(?:i|p)?r' -- Don't copy the virtual foreign key reverse triggers
+      AND t.tgname !~* '^trg_vfk(?:i|p)?' -- Don't copy the virtual foreign key triggers
     GROUP BY ta.schemaname, ta.tablename
   )
   SELECT
@@ -385,69 +398,19 @@ BEGIN
 
   END LOOP;
 
-  --------------------------------------------
-  -- Build virtual polymorphic foreign keys --
-  --------------------------------------------
+  ------------------------------------------------------------------------------------------------------------
+  -- Invoke the sharding.get_queries_to_run_after_sharding_company_structure function if set by the project --
+  ------------------------------------------------------------------------------------------------------------
 
-  -- paperclip_database_storage_attachments
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.paperclip_database_storage_attachments', 'public.users', '{ "attached_type": null, "attached_id": "id" }', NULL, 'r', 'r', '{ "attached_type": ["Manager", "Accountant", "User", "Employee"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.paperclip_database_storage_attachments', 'public.companies', '{ "attached_type": null, "attached_id": "id" }', NULL, 'r', 'r', '{ "attached_type": ["Company"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.paperclip_database_storage_attachments', '%1$I.archives', '{ "attached_type": null, "attached_id": "id" }', NULL, 'r', 'r', '{ "attached_type": ["Archive"] }'));
+  IF common.function_exists('sharding.get_queries_to_run_after_sharding_company_structure') THEN
+    queries := queries || (SELECT sharding.get_queries_to_run_after_sharding_company_structure(auxiliary_table_information));
+  END IF;
 
-  -- company_certificates
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.company_certificates', 'public.companies', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["Company"] }'));
-
-  -- email_addresses
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.email_addresses', '%1$I.suppliers', '{ "email_addressable_type": null, "email_addressable_id": "id" }', NULL, 'r', 'r', '{ "email_addressable_type": ["Supplier"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.email_addresses', '%1$I.customers', '{ "email_addressable_type": null, "email_addressable_id": "id" }', NULL, 'r', 'r', '{ "email_addressable_type": ["Customer"] }'));
-
-  -- contacts
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.contacts', '%1$I.suppliers', '{ "contactable_type": null, "contactable_id": "id" }', NULL, 'r', 'r', '{ "contactable_type": ["Supplier"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.contacts', '%1$I.customers', '{ "contactable_type": null, "contactable_id": "id" }', NULL, 'r', 'r', '{ "contactable_type": ["Customer"] }'));
-
-  -- public_links
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.public_links', '%1$I.documents', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.public_links', '%1$I.receipts', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["Receipt"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.public_links', '%1$I.customers', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["DueDocument"] }'));
-
-  -- addresses
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.addresses', 'public.companies', '{ "addressable_type": null, "addressable_id": "id" }', NULL, 'r', 'r', '{ "addressable_type": ["Company"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.addresses', '%1$I.suppliers', '{ "addressable_type": null, "addressable_id": "id" }', NULL, 'r', 'r', '{ "addressable_type": ["Supplier"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.addresses', '%1$I.customers', '{ "addressable_type": null, "addressable_id": "id" }', NULL, 'r', 'r', '{ "addressable_type": ["Customer"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.addresses', 'public.users', '{ "addressable_type": null, "addressable_id": "id" }', NULL, 'r', 'r', '{ "addressable_type": ["Manager", "Accountant", "User", "Employee"] }'));
-
-  -- purchases_workflows
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.purchases_workflows', '%1$I.purchases_mission_maps', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["Purchases::MissionMap"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.purchases_workflows', '%1$I.purchases_documents', '{ "entity_type": null, "entity_id": "id" }', NULL, 'r', 'r', '{ "entity_type": ["Purchases::Document"] }'));
-
-  -- stocks_stockable_data
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stockable_data', '%1$I.items', '{ "stockable_type": null, "stockable_id": "id" }', NULL, 'r', 'r', '{ "stockable_type": ["Item", "Product"] }'));
-
-  -- stocks_stock_movements
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.documents', '{ "stock_affector_type": null, "stock_affector_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_type": ["Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.document_lines', '{ "stock_affector_detail_type": null, "stock_affector_detail_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_detail_type": ["DocumentLine"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.purchases_documents', '{ "stock_affector_type": null, "stock_affector_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_type": ["Purchases::Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.purchases_document_lines', '{ "stock_affector_detail_type": null, "stock_affector_detail_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_detail_type": ["Purchases::DocumentLine"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.stocks_documents', '{ "stock_affector_type": null, "stock_affector_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_type": ["Stocks::Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.stocks_stock_movements', '%1$I.stocks_document_lines', '{ "stock_affector_detail_type": null, "stock_affector_detail_id": "id" }', NULL, 'r', 'r', '{ "stock_affector_detail_type": ["Stocks::DocumentLine"] }'));
-
-  -- settlements
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.settlements', '%1$I.documents', '{ "associated_type": null, "associated_id": "id" }', NULL, 'r', 'r', '{ "associated_type": ["Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.settlements', '%1$I.document_lines', '{ "associated_type": null, "associated_id": "id" }', NULL, 'r', 'r', '{ "associated_type": ["DocumentLine"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.settlements', '%1$I.purchases_documents', '{ "associated_type": null, "associated_id": "id" }', NULL, 'r', 'r', '{ "associated_type": ["Purchases::Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.settlements', '%1$I.purchases_document_lines', '{ "associated_type": null, "associated_id": "id" }', NULL, 'r', 'r', '{ "associated_type": ["Purchases::DocumentLine"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.settlements', '%1$I.payment_lines', '{ "associated_type": null, "associated_id": "id" }', NULL, 'r', 'r', '{ "associated_type": ["PaymentLine"] }'));
-
-  -- applied_taxes
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_taxes', '%1$I.documents', '{ "taxable_type": null, "taxable_id": "id" }', NULL, 'r', 'r', '{ "taxable_type": ["Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_taxes', '%1$I.receipts', '{ "taxable_type": null, "taxable_id": "id" }', NULL, 'r', 'r', '{ "taxable_type": ["Receipt"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_taxes', '%1$I.receipt_lines', '{ "taxable_type": null, "taxable_id": "id" }', NULL, 'r', 'r', '{ "taxable_type": ["ReceiptLine"] }'));
-
-  -- applied_vats
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_vats', '%1$I.documents', '{ "reference_type": null, "reference_id": "id" }', NULL, 'r', 'r', '{ "reference_type": ["Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_vats', '%1$I.document_lines', '{ "reference_type": null, "reference_id": "id" }', NULL, 'r', 'r', '{ "reference_type": ["DocumentLine"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_vats', '%1$I.purchases_documents', '{ "reference_type": null, "reference_id": "id" }', NULL, 'r', 'r', '{ "reference_type": ["Purchases::Document"] }'));
-  queries := queries || (SELECT sharding.get_create_virtual_polymorphic_foreign_key_queries('%1$I.applied_vats', '%1$I.purchases_document_lines', '{ "reference_type": null, "reference_id": "id" }', NULL, 'r', 'r', '{ "reference_type": ["Purchases::DocumentLine"] }'));
+  queries := queries || format($$
+    UPDATE sharding.sharding_statistics
+    SET structure_sharding_ended_at = clock_timestamp()
+    WHERE sharding_key = %1$s;
+  $$, shard_company_id);
 
   --------------------------------
   -- Create the actual function --
@@ -455,20 +418,29 @@ BEGIN
 
   query := format($$
     CREATE OR REPLACE FUNCTION sharding.create_company_shard(
-      IN p_company_id INTEGER,
-      IN p_company_schema_name TEXT
+      IN p_company_id           INTEGER,
+      IN p_company_schema_name  TEXT
     )
     RETURNS BOOLEAN AS $FUNCTION_BODY$
     DECLARE
-      query TEXT;
-      seq_nextval BIGINT;
-      previous_search_path TEXT;
-      spath TEXT;
-      rec RECORD;
+      query                   TEXT;
+      seq_nextval             BIGINT;
+      previous_search_path    TEXT;
+      spath                   TEXT;
+      rec                     RECORD;
+      current_public_triggers TEXT[];
     BEGIN
       SHOW search_path INTO previous_search_path;
       EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
       SHOW search_path INTO spath;
+
+      SELECT array_agg('public.' || c.relname || '::' || t.tgname)
+      FROM pg_trigger t
+        JOIN pg_class c ON t.tgrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+      WHERE NOT t.tgisinternal
+        AND n.nspname = 'public'
+      INTO current_public_triggers;
 
       %1$s
 
@@ -482,7 +454,7 @@ BEGIN
       SELECT string_agg(
         CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE|SHOW)'
         THEN format(E'\n      %1$s', unnest)
-        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id);', regexp_replace(unnest, '\s+', ' ', 'g'))
+        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id, current_public_triggers);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
         -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE DEBUG ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
         END, E'\n      '

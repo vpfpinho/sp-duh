@@ -19,6 +19,12 @@ BEGIN
   referenced_columns := TG_ARGV[2];
   trigger_condition_clause := TG_ARGV[3];
 
+  IF TG_TABLE_NAME = 'users' THEN
+    IF OLD.company_id IS NULL THEN
+      RETURN OLD;
+    END IF;
+  END IF;
+
   -- Extract the values from the NEW record into the referenced_values variable
   EXECUTE format(
     format('SELECT ARRAY[%s]::TEXT[]',

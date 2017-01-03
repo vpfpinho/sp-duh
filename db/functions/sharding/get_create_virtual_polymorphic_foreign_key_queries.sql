@@ -109,40 +109,40 @@ BEGIN
   -- Check the ON UPDATE clause of the foreign key
   CASE p_update_condition
     WHEN 'c' THEN -- CASCADE
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to cascade the change to any referencing field
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %17$I
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_cascade('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_cascade('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[17]);
 
     WHEN 'n' THEN -- SET NULL
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to set any referencing records to NULL
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %18$I
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_null('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_null('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[18]);
 
     WHEN 'd' THEN -- SET DEFAULT
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after update trigger on the referenced table to set any referencing records to their default value
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %19$I
            AFTER UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_default('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_set_default('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[19]);
 
     WHEN 'r' THEN -- RESTRICT
       -- Create the before update trigger on the referenced table to prevent changing the key fields is they're being referenced
@@ -151,88 +151,86 @@ BEGIN
            BEFORE UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[20]);
 
     ELSE -- If NULL, default to NO ACTION
       -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
       -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %21$I
-           AFTER UPDATE OF %3$s ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %21$I
+           BEFORE UPDATE OF %3$s ON %2$s
            FOR EACH ROW
               WHEN (%11$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_update_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[21]);
   END CASE;
 
   -- Check the ON DELETE clause of the foreign key
   CASE p_delete_condition
     WHEN 'c' THEN -- CASCADE
-      -- Create the after update trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to cascade the deletion to referenced rows
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %22$I
            AFTER DELETE ON %2$s
            FOR EACH ROW
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_cascade('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_cascade('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[22]);
 
     WHEN 'n' THEN -- SET NULL
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to set any referencing records to NULL
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %23$I
            AFTER DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_null('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_null('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[23]);
 
     WHEN 'd' THEN -- SET DEFAULT
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the after delete trigger on the referenced table to set any referencing records to their default value
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %24$I
            AFTER DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_default('%4$s', '%8$s', '%6$s', %15$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_set_default('%4$s', '%7$s', '%6$s', %15$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[24]);
 
     WHEN 'r' THEN -- RESTRICT
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- Create the before delete trigger on the referenced table to prevent deleting the row if the key fields are being referenced
       queries := queries || sharding.wrap_with_duplicate_check(format(
         $$CREATE TRIGGER %25$I
-           AFTER DELETE ON %2$s
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[25]);
 
     ELSE -- If NULL, default to NO ACTION
-      -- Create the after delete trigger on the referenced table to prevent changing the key fields is they're being referenced
-      -- NO ACTION foreign keys are implemented as RESTRICT CONSTRAINT triggers that are deferred
+      -- Create the before delete trigger on the referenced table to prevent changing the key fields is they're being referenced
+      -- NO ACTION foreign keys are implemented as RESTRICT triggers
       queries := queries || sharding.wrap_with_duplicate_check(format(
-        $$CREATE CONSTRAINT TRIGGER %26$I
-           AFTER DELETE ON %2$s
-           DEFERRABLE INITIALLY DEFERRED
+        $$CREATE TRIGGER %26$I
+           BEFORE DELETE ON %2$s
            FOR EACH ROW
               WHEN (%13$s)
-           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%8$s', '%6$s', %16$L);
+           EXECUTE PROCEDURE sharding.trf_virtual_fk_reference_delete_restrict('%4$s', '%7$s', '%6$s', %16$L);
         $$,
         VARIADIC aux_array
-      ));
+      ), aux_array[2], aux_array[26]);
   END CASE;
 
   RETURN queries;

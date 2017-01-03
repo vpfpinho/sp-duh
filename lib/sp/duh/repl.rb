@@ -85,6 +85,12 @@ module SP
          byebug
       end
 
+      #desc 'reload_jsonapi        -- configure JSON API'
+      # @TODO check helpers to reload json and modules with JSM and TD
+      #def reload_jsonapi
+      #  JSONAPI.service.setup
+      #end
+
       def repl ()
         cmdset = @@cmds.abbrev
         while buf = readline_with_hist_management

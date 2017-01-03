@@ -59,6 +59,16 @@ module SP
             a_debug           boolean
           );
 
+          DROP FUNCTION IF EXISTS see_payroll (
+            a_module          text,
+            a_version         text,
+            a_query_map       text,
+            a_calc_parameters text,
+            a_clones          text,
+            a_log             text,
+            a_debug           boolean
+          );
+
           DROP FUNCTION IF EXISTS see_evaluate_expression (
             a_expression text
           );
@@ -109,11 +119,12 @@ module SP
       begin
         a_pg_conn.exec(%Q[
            CREATE TABLE pg_see_json_table (
-             namespace  character varying(255),
-             table_name character varying(255),
-             version    character varying(20),
-             is_model   boolean NOT NULL DEFAULT FALSE,
-             json       text,
+             namespace   character varying(255),
+             table_name  character varying(255),
+             version     character varying(20),
+             is_model    boolean NOT NULL DEFAULT FALSE,
+             json        text,
+             commit_hash character varying(255),
              CONSTRAINT pg_see_json_table_pkey PRIMARY KEY(namespace, table_name, version)
            );
         ])
