@@ -168,7 +168,7 @@ BEGIN
         before_query := format('CREATE SEQUENCE %1$s.%2$I;', p_destination_schema_name, aux);
         after_queries := after_queries
                       || format('ALTER SEQUENCE %1$s.%2$I OWNED BY %1$s.%3$I.%4$I;', p_destination_schema_name, aux, object_name, json_object->>'name')
-                      || format('EXECUTE ''SELECT last_value FROM public.%1$I'' INTO seq_nextval;', aux)
+                      || format('EXECUTE ''SELECT last_value + 1 FROM public.%1$I'' INTO seq_nextval;', aux)
                       || format('EXECUTE format(''ALTER SEQUENCE %%1$s.%1$I RESTART WITH %%2$s'', p_company_schema_name, seq_nextval);', aux);
       END IF;
 
