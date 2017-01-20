@@ -32,9 +32,6 @@ BEGIN
   p_destination_schema_name := '%1$I';
   shard_company_id := '%2$L';
 
-  -- Let's grant that we will use original sequences (temporary hack)
-  p_use_original_sequence := TRUE;
-
   auxiliary_table_information = sharding.get_auxiliary_table_information();
 
   queries := queries || format($$
