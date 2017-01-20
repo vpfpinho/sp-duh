@@ -40,7 +40,7 @@ BEGIN
     _query := format('ALTER SEQUENCE %1$s.%2$I OWNED BY %1$s.%3$I.%4$I;', _row.schemaname, _sequence_name, _row.tablename, _row.columnname);
     RAISE DEBUG '_query: %', _query;
     EXECUTE _query;
-    _query := format('SELECT last_value FROM public.%1$I', _sequence_name);
+    _query := format('SELECT last_value + 1 FROM public.%1$I', _sequence_name);
     RAISE DEBUG '_query: %', _query;
     EXECUTE _query INTO _sequence_next_value;
     _query := format('ALTER SEQUENCE %1$s.%2$I RESTART WITH %3$s', _row.schemaname, _sequence_name, _sequence_next_value);
