@@ -1,8 +1,9 @@
 DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT[], TEXT[], INTEGER, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT, TEXT, INTEGER, TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.shard_table_data(
-  IN OUT insert_queries TEXT[],
-  IN OUT delete_queries TEXT[],
+  IN OUT insert_queries TEXT,
+  IN OUT delete_queries TEXT,
   IN p_company_id INTEGER,
   IN p_table TEXT,
   IN p_schema_name TEXT,
@@ -10,67 +11,69 @@ CREATE OR REPLACE FUNCTION sharding.shard_table_data(
 )
 RETURNS record AS $BODY$
 DECLARE
-  p_insert_queries ALIAS FOR insert_queries;
-  p_delete_queries ALIAS FOR delete_queries;
+  p_insert_queries TEXT[][];
+  p_delete_queries TEXT[][];
   query TEXT;
 BEGIN
+  p_insert_queries := insert_queries::TEXT[][];
+  p_delete_queries := delete_queries::TEXT[][];
   -- RAISE DEBUG 'sharding.shard_table_data(''%'', ''%'', %, ''%'', ''%'', ''%'');', cardinality(p_insert_queries), cardinality(p_delete_queries), p_company_id, p_table, p_schema_name, p_where_clause;
   IF p_where_clause IS NULL THEN
     p_where_clause := 'company_id = %3$L';
   END IF;
 
-  -- Execute the query directly
-  -- p_insert_queries := p_insert_queries || format(
-  --   'INSERT INTO %1$I.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ');',
-  --   p_schema_name,
-  --   p_table,
-  --   p_company_id
-  -- );
-
-  -- Execute the query outputting the affected record count
-  p_insert_queries := p_insert_queries || regexp_replace(format('
-    SELECT common.execute_and_log_count(
-      ''INSERT INTO %1$I.%2$I (SELECT * FROM ONLY public.%2$I WHERE %4$s)'',
-      ''Inserted %% rows from table public.%2$s into %1$s.%2$s'',
-      ''DEBUG''
-    );',
+  query := regexp_replace(format(
+    $${{ %2$I, "SELECT common.execute_and_log_count('INSERT INTO %1$I.%2$I (SELECT * FROM ONLY public.%2$I WHERE %4$s)', 'Inserted %% rows from table public.%2$s into %1$s.%2$s', 'DEBUG');" }}$$,
     p_schema_name,
     p_table,
     p_company_id,
     regexp_replace(format(p_where_clause, p_schema_name, p_table, p_company_id), '''', '''''', 'gn')
   ), '\s+', ' ', 'gn');
 
+  p_insert_queries := format(
+    '%1$s, %2$s',
+    substr(p_insert_queries::TEXT, 1, length(p_insert_queries::TEXT) - 1),
+    substr(query, 2)
+  )::TEXT[][];
+
   -- Store the sharded records into a separate table
   IF sharding.table_exists(format('sharded.%1$I', p_table)) THEN
-    query := regexp_replace(format('INSERT INTO sharded.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ')', p_schema_name, p_table, p_company_id), '\s+', ' ', 'gn');
+    query := regexp_replace(format('INSERT INTO sharded.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ') RETURNING -1', p_schema_name, p_table, p_company_id), '\s+', ' ', 'gn');
   ELSE
-    query := regexp_replace(format('CREATE TABLE sharded.%2$I AS SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause, p_schema_name, p_table, p_company_id), '\s+', ' ', 'gn');
+    query := regexp_replace(format('CREATE TABLE sharded.%2$I AS SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause, p_schema_name, p_table, p_company_id || ' RETURNING -1'), '\s+', ' ', 'gn');
   END IF;
 
-  p_insert_queries := p_insert_queries || query;
+  query := format(
+    $${{ sharded.%1$I, "%2$s" }}$$,
+    p_table,
+    query
+  );
+
+  p_insert_queries := format(
+    '%1$s, %2$s',
+    substr(p_insert_queries::TEXT, 1, length(p_insert_queries::TEXT) - 1),
+    substr(query, 2)
+  )::TEXT[][];
 
   -- And build the delete sharded records from the original table query (only, not from new inherited), to return from the function
 
-  -- Execute the query directly
-  -- p_delete_queries := array_prepend(format(
-  --   'DELETE FROM ONLY public.%2$I WHERE ' || p_where_clause || ';',
-  --   p_schema_name,
-  --   p_table,
-  --   p_company_id
-  -- ), p_delete_queries);
-
   -- Execute the query outputting the affected record count
-  p_delete_queries := array_prepend(regexp_replace(format('
-    SELECT common.execute_and_log_count(
-      ''DELETE FROM ONLY public.%2$I WHERE %4$s'',
-      ''Deleted %% rows from table public.%2$s for company %3$s'',
-      ''DEBUG''
-    );',
+  query := format(
+    $${{ %2$I, "SELECT common.execute_and_log_count('DELETE FROM ONLY public.%2$I WHERE %4$s', 'Deleted %% rows from table public.%2$s for company %3$s', 'DEBUG');" }}$$,
     p_schema_name,
     p_table,
     p_company_id,
     regexp_replace(format(p_where_clause, p_schema_name, p_table, p_company_id), '''', '''''', 'gn')
-  ), '\s+', ' ', 'gn'), p_delete_queries);
+  );
+
+  p_delete_queries := format(
+    '%1$s, %2$s',
+    substr(query::TEXT, 1, length(query::TEXT) - 1),
+    substr(p_delete_queries::TEXT, 2)
+  )::TEXT[][];
+
+  insert_queries := p_insert_queries::TEXT;
+  delete_queries := p_delete_queries::TEXT;
 
   RETURN;
 -- EXCEPTION
