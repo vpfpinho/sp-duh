@@ -1,3 +1,5 @@
+require 'rails/generators'
+
 module Rails
   module Generators
     class <<self
