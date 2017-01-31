@@ -33,10 +33,60 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 's
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations', 'migrator'))
 
+# SP helper lib
+require 'sp-excel-loader'
+
 module SP
   module Duh
     def self.root
       File.expand_path '../../..', __FILE__
+    end
+
+    def self.mock_pdf (args)
+      jrxml_base = File.basename("#{args[:name]}")
+      Dir.mkdir './tmp' unless Dir.exists?('./tmp')
+      converter = ::Sp::Excel::Loader::Jrxml::ExcelToJrxml.new("config/#{args[:name]}.xlsx", nil, true, true, false)
+      File.rename("#{jrxml_base}.jrxml", "./tmp/#{jrxml_base}_compat.jrxml")
+      converter = ::Sp::Excel::Loader::Jrxml::ExcelToJrxml.new("config/#{args[:name]}.xlsx", nil, true, true, true)
+      File.rename("#{jrxml_base}.jrxml", "./tmp/#{jrxml_base}.jrxml")
+
+      return unless args.has_key?(:data) 
+
+      control = [{
+          :locale           => 'pt-PT',
+          :template_file    => File.expand_path("./tmp/#{jrxml_base}.jrxml"),
+          :report_file      => File.expand_path("./tmp/#{jrxml_base}.jrxml"),
+          :data_file        => File.expand_path('./tmp/data.json'),
+          :number_of_copies => 1,
+          :auto_printable   => false
+        }]
+      if args.has_key?(:print_server) and args[:print_server] == 'false'
+        File.write(File.expand_path('./tmp/control.json'), control.to_json)
+        File.write(File.expand_path('./tmp/data.json'), args[:data])
+        result = JSON.parse(%x[ /usr/local/bin/casper-print -j #{File.expand_path('./tmp/control.json')} ])
+        if result['file']
+          %x[open #{result['file']}]
+        else
+          ap result
+        end
+      else
+        # Use legacy format to talk with print server
+        uri           = URI('http://localhost:3001/print')
+        http          = Net::HTTP.new(uri.host, uri.port)
+        request       = Net::HTTP::Post.new(uri.path, initheader = {'Content-Type' =>'application/json'})
+        json_data = JSON.parse(args[:data],:symbolize_names => true)
+        json_data[:documents][0][:copies] = 1
+        json_data[:documents][0][:report_file] = control[0][:report_file]
+        json_data[:documents][0][:auto_printable] = false
+        json_data[:documents][0][:data][:attributes].delete(:certificate)
+        request.body  = json_data.to_json
+        http_response = http.request(request)
+        if http_response.code == "200"
+          %x[open #{http_response.body}]
+        else
+          ap JSON.parse(http_response.body)
+        end
+      end
     end
 
     def self.initsee (a_pg_conn, a_recreate = false)
