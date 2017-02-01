@@ -32,9 +32,6 @@ BEGIN
   p_destination_schema_name := '%1$I';
   shard_company_id := '%2$L';
 
-  -- Let's grant that we will use original sequences (temporary hack)
-  p_use_original_sequence := TRUE;
-
   auxiliary_table_information = sharding.get_auxiliary_table_information();
 
   queries := queries || format($$
@@ -171,7 +168,7 @@ BEGIN
         before_query := format('CREATE SEQUENCE %1$s.%2$I;', p_destination_schema_name, aux);
         after_queries := after_queries
                       || format('ALTER SEQUENCE %1$s.%2$I OWNED BY %1$s.%3$I.%4$I;', p_destination_schema_name, aux, object_name, json_object->>'name')
-                      || format('EXECUTE ''SELECT last_value FROM public.%1$I'' INTO seq_nextval;', aux)
+                      || format('EXECUTE ''SELECT last_value + 1 FROM public.%1$I'' INTO seq_nextval;', aux)
                       || format('EXECUTE format(''ALTER SEQUENCE %%1$s.%1$I RESTART WITH %%2$s'', p_company_schema_name, seq_nextval);', aux);
       END IF;
 
