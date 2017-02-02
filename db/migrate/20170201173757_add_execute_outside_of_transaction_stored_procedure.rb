@@ -17,6 +17,7 @@ class AddExecuteOutsideOfTransactionStoredProcedure < ActiveRecord::Migration
         RETURN (SELECT public.dblink_exec(server_connection, query));
       END;
       $BODY$ language plpgsql;
+    SQL
   end
 
   def down
