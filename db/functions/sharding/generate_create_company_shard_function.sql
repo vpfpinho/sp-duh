@@ -34,9 +34,13 @@ BEGIN
 
   auxiliary_table_information = sharding.get_auxiliary_table_information();
 
-  queries := queries || format($$
-    INSERT INTO sharding.sharding_statistics (sharding_key, structure_sharding_started_at) VALUES (%1$s, clock_timestamp())
-  $$, shard_company_id);
+  queries := queries || format($QUERY$
+    SELECT common.execute_outside_of_transaction($$DELETE FROM sharding.sharding_statistics WHERE sharding_key = %1$s;$$);
+  $QUERY$, shard_company_id);
+
+  queries := queries || format($QUERY$
+    SELECT common.execute_outside_of_transaction($$INSERT INTO sharding.sharding_statistics (sharding_key, structure_sharding_started_at) VALUES (%1$s, clock_timestamp());$$);
+  $QUERY$, shard_company_id);
 
   -------------------------------------------------------------------------------------------------------------
   -- Invoke the sharding.get_queries_to_run_before_sharding_company_structure function if set by the project --
@@ -403,11 +407,13 @@ BEGIN
     queries := queries || (SELECT sharding.get_queries_to_run_after_sharding_company_structure(auxiliary_table_information));
   END IF;
 
-  queries := queries || format($$
-    UPDATE sharding.sharding_statistics
-    SET structure_sharding_ended_at = clock_timestamp()
-    WHERE sharding_key = %1$s;
-  $$, shard_company_id);
+  queries := queries || format($QUERY$
+    SELECT common.execute_outside_of_transaction($$
+      UPDATE sharding.sharding_statistics
+      SET structure_sharding_ended_at = clock_timestamp()
+      WHERE sharding_key = %1$s;
+    $$);
+  $QUERY$, shard_company_id);
 
   --------------------------------
   -- Create the actual function --
