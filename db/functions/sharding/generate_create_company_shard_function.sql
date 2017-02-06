@@ -39,7 +39,7 @@ BEGIN
   $QUERY$, shard_company_id);
 
   queries := queries || format($QUERY$
-    SELECT common.execute_outside_of_transaction($$INSERT INTO sharding.sharding_statistics (sharding_key, structure_sharding_started_at) VALUES (%1$s, clock_timestamp());$$);
+    SELECT common.execute_outside_of_transaction($$INSERT INTO sharding.sharding_statistics (sharding_key, triggered_by) VALUES (%1$s, %%4$L);$$);
   $QUERY$, shard_company_id);
 
   -------------------------------------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ BEGIN
   queries := queries || format($QUERY$
     SELECT common.execute_outside_of_transaction($$
       UPDATE sharding.sharding_statistics
-      SET structure_sharding_ended_at = clock_timestamp()
+      SET status = (CASE WHEN %%4$L = 'insert' THEN 'success' ELSE 'created-structure' END)::sharding.sharding_status
       WHERE sharding_key = %1$s;
     $$);
   $QUERY$, shard_company_id);
@@ -421,8 +421,9 @@ BEGIN
 
   query := format($$
     CREATE OR REPLACE FUNCTION sharding.create_company_shard(
-      IN p_company_id           INTEGER,
-      IN p_company_schema_name  TEXT
+        IN p_company_id           INTEGER
+      , IN p_company_schema_name  TEXT
+      , IN p_triggered_by         sharding.sharding_triggered_by
     )
     RETURNS BOOLEAN AS $FUNCTION_BODY$
     DECLARE
@@ -457,7 +458,7 @@ BEGIN
       SELECT string_agg(
         CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE|SHOW)'
         THEN format(E'\n      %1$s', unnest)
-        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id, current_public_triggers);', regexp_replace(unnest, '\s+', ' ', 'g'))
+        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id, current_public_triggers, p_triggered_by);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
         -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE DEBUG ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
         END, E'\n      '
