@@ -55,11 +55,12 @@ BEGIN
     regexp_replace(format(p_where_clause, p_schema_name, p_table, p_company_id), '''', '''''', 'gn')
   ), '\s+', ' ', 'gn');
 
-  p_insert_queries := format(
-    '%1$s, %2$s',
-    substr(p_insert_queries::TEXT, 1, length(p_insert_queries::TEXT) - 1),
-    substr(query, 2)
-  )::TEXT[][];
+  p_insert_queries := array_cat(
+    p_insert_queries,
+    ARRAY['progress', format($ARRAY$SELECT common.execute_outside_of_transaction($$UPDATE sharding.sharding_statistics SET current_step = %2$L WHERE sharding_key = %1$s;$$);$ARRAY$, p_company_id, p_table)]::TEXT[]
+  );
+
+  p_insert_queries := array_cat(p_insert_queries::TEXT[][], query::TEXT[][])::TEXT;
 
   -- Store the sharded records into a separate table
   IF sharding.table_exists(format('sharded.%1$I', p_table)) THEN
@@ -74,11 +75,7 @@ BEGIN
     query
   );
 
-  p_insert_queries := format(
-    '%1$s, %2$s',
-    substr(p_insert_queries::TEXT, 1, length(p_insert_queries::TEXT) - 1),
-    substr(query, 2)
-  )::TEXT[][];
+  p_insert_queries := array_cat(p_insert_queries::TEXT[][], query::TEXT[][])::TEXT;
 
   IF p_generate_delete_data_queries THEN
     -- And build the delete sharded records from the original table query (only, not from new inherited), to return from the function
@@ -92,11 +89,12 @@ BEGIN
       regexp_replace(format(p_where_clause, p_schema_name, p_table, p_company_id), '''', '''''', 'gn')
     );
 
-    p_delete_queries := format(
-      '%1$s, %2$s',
-      substr(query::TEXT, 1, length(query::TEXT) - 1),
-      substr(p_delete_queries::TEXT, 2)
-    )::TEXT[][];
+    p_delete_queries := array_cat(
+      p_delete_queries,
+      ARRAY['progress', format($ARRAY$SELECT common.execute_outside_of_transaction($$UPDATE sharding.sharding_statistics SET current_step = %2$L WHERE sharding_key = %1$s;$$);$ARRAY$, p_company_id, p_table)]::TEXT[]
+    );
+
+    p_delete_queries := array_cat(query::TEXT[][], p_delete_queries::TEXT[][])::TEXT;
   END IF;
 
   insert_queries := p_insert_queries::TEXT;
