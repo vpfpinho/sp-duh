@@ -48,6 +48,7 @@ DECLARE
     pattern         TEXT;
     symbol          TEXT;
     symbol_at_right BOOLEAN;
+    major_plural    TEXT;
     spellout_result TEXT;
 BEGIN
 
@@ -87,7 +88,7 @@ BEGIN
     END IF;
 
     EXECUTE    
-        'SELECT array( SELECT COALESCE(' || locale || 'en)FROM i18n
+        'SELECT array( SELECT COALESCE(' || locale || 'en) FROM i18n
                 JOIN unnest(
                     ARRAY[''' || cc || '_major_singular'', ''' || cc || '_major_plural'', ''' || cc || '_minor_singular'', ''' || cc || '_minor_plural'', ''currency_value_spellout'']
                 ) 
@@ -97,10 +98,20 @@ BEGIN
 
     IF array_length(rows, 1) < 5 
     THEN
+        -- pick currency name --
+        EXECUTE 
+            format('SELECT COALESCE(%1$sen) FROM i18n WHERE key =''%2$s_major_plural'';', locale, cc)
+        INTO major_plural;
         -- pick pattern for this currency --
         EXECUTE 
             format('SELECT pattern, symbol, symbol_at_right, minor_unit FROM currencies WHERE iso_code =''%1$s'';', upper(cc))
         INTO pattern, symbol, symbol_at_right, nodd;
+
+        IF LENGTH(major_plural) > 0
+        THEN
+            symbol := major_plural;
+            symbol_at_right := true;
+        END IF;
         -- ask C++ to format value as --
         IF symbol_at_right
         THEN
@@ -117,7 +128,7 @@ BEGIN
         -- split value components ---
         major := TRUNC(a_value)::NUMERIC;
         minor := (ROUND((a_value - major)::numeric, nodd) * POWER(10, nodd))::NUMERIC;
-        -- ask c++ to spell out this number --
+        -- ask C++ to spell out this number --
         SELECT spellout FROM pg_cpp_utils_currency_spellout(a_locale, 
             major, rows[1], rows[2], 
             minor, rows[3], rows[4], rows[5]
@@ -129,5 +140,45 @@ END;
 $BODY$
 LANGUAGE 'plpgsql' IMMUTABLE;
 
-SELECT currency_spellout(123.45, 'USD', 'pt');
+CREATE OR REPLACE FUNCTION currency_format (a_value NUMERIC, a_currency_iso_code TEXT, a_locale TEXT)
+    RETURNS TEXT AS
+$BODY$
+DECLARE
+    cc              TEXT;
+    nodd            INT;
+    pattern         TEXT;
+    symbol          TEXT;
+    symbol_at_right BOOLEAN;
+    spellout_result TEXT;
+BEGIN
+    -- COUNTRY CODE ISO CODE --
+    cc := lower(a_currency_iso_code);
+    -- pick pattern for this currency --
+    EXECUTE 
+        format('SELECT pattern, symbol, symbol_at_right, minor_unit FROM currencies WHERE iso_code =''%1$s'';', upper(cc))
+    INTO pattern, symbol, symbol_at_right, nodd;
+    -- ask C++ to format value as --
+    IF symbol_at_right
+    THEN
+        pattern := pattern || ' ' || symbol;
+    ELSE
+        pattern := symbol || ' ' || pattern;
+    END IF;
+    SELECT formatted FROM pg_cpp_utils_format_number(a_locale, ROUND(a_value, nodd), pattern) INTO spellout_result;
+
+    RETURN spellout_result;
+END;
+$BODY$
+LANGUAGE 'plpgsql' IMMUTABLE;
+
 SELECT currency_spellout(123.45, 'JPY', 'jp_JP');
+SELECT currency_spellout(123.45, 'BTN', 'pt');
+
+SELECT currency_spellout(123.45, 'USD', 'en_US');
+SELECT currency_spellout(123.45, 'EUR', 'pt_PT');
+SELECT currency_spellout(123.45, 'GBP', 'en_BG');
+
+
+SELECT currency_format(123.45, 'USD', 'en_US');
+SELECT currency_format(123.45, 'EUR', 'pt_PT');
+SELECT currency_format(123.45, 'GBP', 'en_BG');
