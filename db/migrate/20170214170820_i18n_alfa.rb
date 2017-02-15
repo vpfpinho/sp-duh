@@ -1,5 +1,5 @@
-class public.I18nAlfa < ActiveRecord::Migration
-  
+class I18nAlfa < ActiveRecord::Migration
+
   def up
     execute <<-'SQLSQLSQL'
 
@@ -7,21 +7,21 @@ class public.I18nAlfa < ActiveRecord::Migration
       CREATE TYPE public.pg_cpp_utils_hash_record AS (long_hash text, short_hash text);
       CREATE TYPE public.pg_cpp_utils_number_spellout_record AS (spellout text);
       CREATE TYPE public.pg_cpp_utils_format_number_record AS (formatted text);
-      
-      CREATE OR REPLACE FUNCTION public.pg_cpp_utils_version (  
+
+      CREATE OR REPLACE FUNCTION public.pg_cpp_utils_version (
       ) RETURNS pg_cpp_utils_version_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_version' LANGUAGE C STRICT;
-      
+
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_invoice_hash (
         a_pem_uri text,
         a_payload text
       ) RETURNS pg_cpp_utils_hash_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_invoice_hash' LANGUAGE C STRICT;
-      
+
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_number_spellout (
         a_locale            varchar(5),
         a_payload           float8,
         a_spellout_override text default ''
       ) RETURNS pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_number_spellout' LANGUAGE C STRICT;
-      
+
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_currency_spellout (
         a_locale            varchar(5),
         a_major           float8,
@@ -33,7 +33,7 @@ class public.I18nAlfa < ActiveRecord::Migration
         a_format            text,
         a_spellout_override text default ''
       ) RETURNS pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_currency_spellout' LANGUAGE C STRICT;
-      
+
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_format_number (
         a_locale  varchar(5),
         a_value   float8,
@@ -42,7 +42,7 @@ class public.I18nAlfa < ActiveRecord::Migration
 
 			ALTER TABLE public.currencies ADD COLUMN symbol_at_right BOOLEAN DEFAULT true;
 			UPDATE public.currencies SET symbol_at_right=false WHERE iso_code IN ('GBP', 'USD', 'BRL');
-			
+
 			CREATE TABLE public.i18n (
 			    key TEXT,
 			    pt TEXT,
@@ -53,9 +53,9 @@ class public.I18nAlfa < ActiveRecord::Migration
 			    it TEXT,
 			    PRIMARY KEY (key)
 			);
-  
+
       CREATE INDEX i18n_key_index ON public.i18n(key);
-     
+
       CREATE TABLE public.currency_map (
           key VARCHAR(3),
           symbol VARCHAR(4),
@@ -193,13 +193,13 @@ class public.I18nAlfa < ActiveRecord::Migration
 
       INSERT INTO public.i18n(key, en) SELECT CONCAT(lower(key),'_major_singular'), name FROM public.currency_map;
       INSERT INTO public.i18n(key, en) SELECT CONCAT(lower(key),'_major_plural'), name_plural FROM public.currency_map;
-      
-      INSERT INTO public.i18n (key, pt, en) VALUES ('currency_value_spellout', 
+
+      INSERT INTO public.i18n (key, pt, en) VALUES ('currency_value_spellout',
       	'{3} {0, plural, =1 {{1}} other {{2}}}{4, plural, =0 {} other { e {7} {4, plural, =1 {{5}} other {{6}}}}}',
       	'{3} {0, plural, =1 {{1}} other {{2}}}{4, plural, =0 {} other { and {7} {4, plural, =1 {{5}} other {{6}}}}}'
       );
 
-      INSERT INTO public.i18n (key, pt) VALUES ('custom_currency_spellout', 
+      INSERT INTO public.i18n (key, pt) VALUES ('custom_currency_spellout',
 '%%lenient-parse:
  &[last primary ignorable ] << '' '' << '','' << ''-'' << ''-'';
  %spellout-numbering-year:
@@ -259,16 +259,16 @@ class public.I18nAlfa < ActiveRecord::Migration
  1000000000000000: um quatrilião[, >>];
  2000000000000000: << quatriliões[, >>];
  1000000000000000000: =#,##0=;');
-      
+
       INSERT INTO public.i18n (key, pt, en) VALUES ('eur_minor_singular', 'cêntimo' , 'cent' );
       INSERT INTO public.i18n (key, pt, en) VALUES ('eur_minor_plural',  'cêntimos', 'cents');
-      
+
       INSERT INTO public.i18n (key, pt, en) VALUES ('usd_minor_singular', 'cêntimo' , 'cent' );
       INSERT INTO public.i18n (key, pt, en) VALUES ('usd_minor_plural'  , 'cêntimos', 'cents');
-      
+
       UPDATE public.i18n SET pt='libra estrelina',   en='pound sterling'  WHERE key = 'gbp_major_singular';
       UPDATE public.i18n SET pt='libras estrelinas', en='pounds sterling' WHERE key = 'gbp_major_plural';
-      
+
       INSERT INTO public.i18n (key, pt, en) VALUES ('gbp_minor_singular', 'centavo',  'penny' );
       INSERT INTO public.i18n (key, pt, en) VALUES ('gbp_minor_plural'  , 'centavos', 'pence');
 
@@ -292,16 +292,16 @@ class public.I18nAlfa < ActiveRecord::Migration
           spellout_override TEXT;
           spellout_result   TEXT;
       BEGIN
-      
+
           -- COUNTRY CODE ISO CODE --
           cc := lower(a_currency_iso_code);
-      
+
           -- SEARCH FOR LOCALE --
           locale := lower(a_locale);
-          EXECUTE 
-              format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''', a_locale) 
+          EXECUTE
+              format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''', a_locale)
           INTO tmp_text;
-      
+
           locale_exists := tmp_text IS NOT NULL;
           IF FALSE = locale_exists
           THEN
@@ -310,7 +310,7 @@ class public.I18nAlfa < ActiveRecord::Migration
               THEN
                   locale := SUBSTR(locale, 1, 2);
                   EXECUTE
-                      format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''', 
+                      format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''',
                           locale
                       )
                   INTO tmp_text;
@@ -328,27 +328,27 @@ class public.I18nAlfa < ActiveRecord::Migration
           ELSE
               locale := locale || ',';
           END IF;
-      
-          EXECUTE    
+
+          EXECUTE
               'SELECT array( SELECT COALESCE(' || locale || 'en) FROM public.i18n
                       JOIN unnest(
                           ARRAY[''' || cc || '_major_singular'', ''' || cc || '_major_plural'', ''' || cc || '_minor_singular'', ''' || cc || '_minor_plural'', ''currency_value_spellout'', ''custom_currency_spellout'']
-                      ) 
+                      )
                           WITH ORDINALITY t(key, ord) USING (key)
               ORDER  BY t.ord);'
           INTO rows;
 
-          IF array_length(rows, 1) < 5 
+          IF array_length(rows, 1) < 5
           THEN
               -- pick currency name --
-              EXECUTE 
+              EXECUTE
                   format('SELECT COALESCE(%1$sen) FROM public.i18n WHERE key =''%2$s_major_plural'';', locale, cc)
               INTO major_plural;
               -- pick pattern for this currency --
-              EXECUTE 
+              EXECUTE
                   format('SELECT pattern, symbol, symbol_at_right, minor_unit FROM public.currencies WHERE iso_code =''%1$s'';', upper(cc))
               INTO pattern, symbol, symbol_at_right, nodd;
-      
+
               IF LENGTH(major_plural) > 0
               THEN
                   symbol := major_plural;
@@ -364,7 +364,7 @@ class public.I18nAlfa < ActiveRecord::Migration
               SELECT formatted FROM public.pg_cpp_utils_format_number(a_locale, ROUND(a_value, nodd), pattern) INTO spellout_result;
           ELSE
               -- get number of decimal places --
-              EXECUTE 
+              EXECUTE
                   format('SELECT minor_unit FROM public.currencies WHERE iso_code =''%1$s'';', upper(cc))
               INTO nodd;
               -- split value components ---
@@ -383,17 +383,17 @@ class public.I18nAlfa < ActiveRecord::Migration
                 spellout_override := '';
               END IF;
               -- ask C++ to spell out this number --
-              SELECT spellout FROM public.pg_cpp_utils_currency_spellout(a_locale, 
-                  major, rows[1], rows[2], 
+              SELECT spellout FROM public.pg_cpp_utils_currency_spellout(a_locale,
+                  major, rows[1], rows[2],
                   minor, rows[3], rows[4], rows[5], spellout_override
               ) INTO spellout_result;
           END IF;
-      
+
           RETURN spellout_result;
       END;
       $BODY$
       LANGUAGE 'plpgsql' IMMUTABLE;
-      
+
       CREATE OR REPLACE FUNCTION public.currency_format (a_value NUMERIC, a_currency_iso_code TEXT, a_locale TEXT)
           RETURNS TEXT AS
       $BODY$
@@ -408,7 +408,7 @@ class public.I18nAlfa < ActiveRecord::Migration
           -- COUNTRY CODE ISO CODE --
           cc := lower(a_currency_iso_code);
           -- pick pattern for this currency --
-          EXECUTE 
+          EXECUTE
               format('SELECT pattern, symbol, symbol_at_right, minor_unit FROM public.currencies WHERE iso_code =''%1$s'';', upper(cc))
           INTO pattern, symbol, symbol_at_right, nodd;
           -- ask C++ to format value as --
@@ -419,7 +419,7 @@ class public.I18nAlfa < ActiveRecord::Migration
               pattern := symbol || ' ' || pattern;
           END IF;
           SELECT formatted FROM public.pg_cpp_utils_format_number(a_locale, ROUND(a_value, nodd), pattern) INTO formatted_result;
-      
+
           RETURN formatted_result;
       END;
       $BODY$
@@ -431,7 +431,7 @@ class public.I18nAlfa < ActiveRecord::Migration
 
     execute <<-'SQLSQLSQL'
 
-      DROP FUNCTION IF EXISTS public.pg_cpp_utils_version ();  
+      DROP FUNCTION IF EXISTS public.pg_cpp_utils_version ();
       DROP FUNCTION IF EXISTS public.pg_cpp_utils_invoice_hash(TEXT, TEXT);
       DROP FUNCTION IF EXISTS public.pg_cpp_utils_number_spellout(VARCHAR(5), FLOAT8, TEXT);
       DROP FUNCTION IF EXISTS public.pg_cpp_utils_currency_spellout(VARCHAR(5), FLOAT8, TEXT, TEXT, FLOAT8, TEXT, TEXT, TEXT, TEXT);
@@ -443,7 +443,7 @@ class public.I18nAlfa < ActiveRecord::Migration
       DROP TYPE public.pg_cpp_utils_format_number_record;
 
 			ALTER TABLE public.currencies DROP COLUMN symbol_at_right;
-			
+
 			DROP TABLE IF EXISTS public.i18n;
       DROP TABLE IF EXISTS public.currency_map;
 
