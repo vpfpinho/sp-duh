@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.get_company_schemas_to_backup(bigint);
+DROP FUNCTION IF EXISTS transfer.get_company_schemas_to_backup(bigint, boolean);
 CREATE OR REPLACE FUNCTION transfer.get_company_schemas_to_backup(
-  company_id    bigint
+  company_id                bigint,
+  transfer_user_templates   boolean DEFAULT false
 ) RETURNS TABLE (
   schema_name   text,
   schema_type   text
@@ -31,12 +32,18 @@ BEGIN
     SELECT c.schema_name::text, ''accounting''::text AS schema_type
       FROM accounting_schemas c
     UNION
-    SELECT c.schema_name::text, ''user''::text AS schema_type
-      FROM user_schemas c
-    UNION
     SELECT (SELECT * FROM transfer.get_meta_schema_name(%1$L)) AS schema_name, ''meta''::text AS schema_type
 
   ', company_id);
+
+  IF transfer_user_templates THEN
+    query := query || '
+      UNION
+      SELECT c.schema_name::text, ''user''::text AS schema_type
+        FROM user_schemas c
+    ';
+  END IF;
+
   RETURN QUERY EXECUTE query;
 
 END;

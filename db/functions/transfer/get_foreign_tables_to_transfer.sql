@@ -1,5 +1,6 @@
-DROP FUNCTION IF EXISTS transfer.get_foreign_tables_to_transfer();
+DROP FUNCTION IF EXISTS transfer.get_foreign_tables_to_transfer(boolean);
 CREATE OR REPLACE FUNCTION transfer.get_foreign_tables_to_transfer(
+  transfer_user_templates   boolean DEFAULT false
 ) RETURNS TABLE (
   table_name    text,
   column_name   text,
@@ -50,16 +51,24 @@ BEGIN
       UNION
       SELECT ''accounting_companies''::text AS table_name, ''company_id''::text AS column_name, ''accounting''::text AS schema_name, ''00''::text AS priority_key
       UNION
-      SELECT ''user_templates''::text AS table_name, ''user_id''::text AS column_name, ''accounting''::text AS schema_name, ''00''::text AS priority_key
-      UNION
       SELECT table_name, column_name, schema_name, priority_key FROM foreign_tables
+  ', auxiliary_table_information->'unsharded_tables');
+
+  IF transfer_user_templates THEN
+    query := query || '
+      UNION
+      SELECT ''user_templates''::text AS table_name, ''user_id''::text AS column_name, ''accounting''::text AS schema_name, ''00''::text AS priority_key
+    ';
+  END IF;
+
+  query := query || '
     )
 
     SELECT table_name, column_name, schema_name
       FROM all_tables
       ORDER BY priority_key DESC, table_name;
+  ';
 
-  ', auxiliary_table_information->'unsharded_tables');
   RETURN QUERY EXECUTE query;
 
 END;
