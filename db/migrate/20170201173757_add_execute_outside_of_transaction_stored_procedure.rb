@@ -1,5 +1,7 @@
 class AddExecuteOutsideOfTransactionStoredProcedure < ActiveRecord::Migration
   def up
+    execute %Q[CREATE EXTENSION IF NOT EXISTS dblink;]
+
     execute <<-'SQL'
       CREATE OR REPLACE FUNCTION common.execute_outside_of_transaction(query TEXT)
       RETURNS TEXT AS
