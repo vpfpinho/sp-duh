@@ -1,5 +1,5 @@
-DROP FUNCTION IF EXISTS transfer.restore_before_execute(bigint);
-CREATE OR REPLACE FUNCTION transfer.restore_before_execute(
+DROP FUNCTION IF EXISTS transfer.restore_after_before_execute(bigint);
+CREATE OR REPLACE FUNCTION transfer.restore_after_before_execute(
   company_id                  bigint
 ) RETURNS TABLE (
   schema_name                 text

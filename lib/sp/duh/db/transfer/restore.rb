@@ -26,9 +26,8 @@ module SP
               SP::Duh::Db::Transfer.log_with_time "STARTED restoring company #{@company_id} from dump #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Preparing restore..."
               @started_at = Time.now
-              @connection.exec %Q[
-                DROP SCHEMA IF EXISTS _meta_ CASCADE;
-                CREATE SCHEMA _meta_;
+              @schemas = @connection.exec %Q[
+                SELECT * FROM transfer.restore_before_before_execute(#{@company_id});
               ]
               command = "pg_restore -Fc -n _meta_ -U #{@connection.user} -d #{@connection.db} < #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Restoring the backup metadata..."
@@ -36,7 +35,7 @@ module SP
               result = %x[ #{command} ]
               SP::Duh::Db::Transfer.log_with_time "Processing metadata and foreign records..."
               @schemas = @connection.exec %Q[
-                SELECT * FROM transfer.restore_before_execute(#{@company_id});
+                SELECT * FROM transfer.restore_after_before_execute(#{@company_id});
               ]
               @schemas = @schemas.map { |result| result['schema_name'] }
             end
