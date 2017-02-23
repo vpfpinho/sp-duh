@@ -18,21 +18,14 @@ BEGIN
   -- Create the meta schema
 
   EXECUTE
-    FORMAT('SELECT * FROM transfer.get_meta_schema_name(%1$L)', company_id)
+    FORMAT('SELECT * FROM transfer.create_meta_schema(%1$L)', company_id)
   INTO STRICT meta_schema;
 
-  EXECUTE
-    FORMAT('
-      DROP SCHEMA IF EXISTS %1$s CASCADE;
-      CREATE SCHEMA %1$s;
-    ', meta_schema);
-
-  -- Create and populate the meta information about the company and the backup
+  -- Populate the meta information about the company and the backup
 
   EXECUTE
     FORMAT('
-      CREATE UNLOGGED TABLE %1$s.info
-      AS
+      INSERT INTO %1$s.info
         SELECT
           c.id AS company_id,
           c.tax_registration_number,
