@@ -1,14 +1,14 @@
-DROP FUNCTION IF EXISTS transfer.create_shard_triggers(TEXT, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS transfer.create_shard_triggers(TEXT, TEXT, TEXT, TEXT, JSONB);
 
 CREATE OR REPLACE FUNCTION transfer.create_shard_triggers(
   template_schema_name    TEXT,
   schema_name             TEXT,
   template_prefix         TEXT DEFAULT '',
-  prefix                  TEXT DEFAULT ''
+  prefix                  TEXT DEFAULT '',
+  all_objects_data        JSONB DEFAULT NULL
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
-  all_objects_data JSONB;
   object_data JSON;
   qualified_object_name TEXT;
   object_name TEXT;
@@ -18,16 +18,19 @@ DECLARE
 BEGIN
 
   SHOW search_path INTO original_search_path;
-  SET search_path TO '';
 
-  -- Get the necessary data to create the new triggers
-  SELECT
-    json_object_agg(i.qualified_object_name,
-      json_build_object(
-        'triggers', i.triggers
-      )
-    )::JSONB INTO all_objects_data
-  FROM sharding.get_tables_info(template_schema_name, template_prefix) i;
+  IF all_objects_data IS NULL THEN
+    SET search_path TO '';
+
+    -- Get the necessary data to create the new triggers
+    SELECT
+      json_object_agg(i.qualified_object_name,
+        json_build_object(
+          'triggers', i.triggers
+        )
+      )::JSONB INTO all_objects_data
+    FROM sharding.get_tables_info(template_schema_name, template_prefix) i;
+  END IF;
 
   EXECUTE 'SET search_path to ' || schema_name || ', public';
 
