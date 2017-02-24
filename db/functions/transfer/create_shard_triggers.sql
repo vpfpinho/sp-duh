@@ -9,12 +9,12 @@ CREATE OR REPLACE FUNCTION transfer.create_shard_triggers(
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
-  object_data JSON;
-  qualified_object_name TEXT;
-  object_name TEXT;
-  json_object JSON;
-  query TEXT;
-  original_search_path TEXT;
+  object_data             JSON;
+  qualified_object_name   TEXT;
+  object_name             TEXT;
+  json_object             JSON;
+  query                   TEXT;
+  original_search_path    TEXT;
 BEGIN
 
   SHOW search_path INTO original_search_path;
@@ -40,7 +40,7 @@ BEGIN
 
   FOR qualified_object_name, object_data IN SELECT * FROM jsonb_each(all_objects_data) LOOP
 
-    object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+    object_name := regexp_replace(qualified_object_name, '^(?:' || template_schema_name || '\.' || template_prefix || ')?(.*)$', '\1');
 
     RAISE DEBUG '-- [TRIGGERS] TABLE: %', object_name;
 
@@ -48,8 +48,8 @@ BEGIN
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'triggers') LOOP
         query := regexp_replace(
           json_object->>'definition',
-          ' ON (?:\S+?\.)?',
-          format(' ON %1$s.', schema_name)
+          ' ON (?:' || template_schema_name || '\.' || template_prefix || ')?',
+          format(' ON %1$s.%2$s', schema_name, prefix)
         );
         EXECUTE query;
       END LOOP;

@@ -9,12 +9,13 @@ CREATE OR REPLACE FUNCTION transfer.create_shard_constraints(
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
-  object_data JSON;
-  qualified_object_name TEXT;
-  object_name TEXT;
-  json_object JSON;
-  query TEXT;
-  original_search_path TEXT;
+  object_data             JSON;
+  qualified_object_name   TEXT;
+  object_name             TEXT;
+  json_object             JSON;
+  query                   TEXT;
+  original_search_path    TEXT;
+  name                    TEXT;
 BEGIN
 
   SHOW search_path INTO original_search_path;
@@ -40,18 +41,25 @@ BEGIN
 
   FOR qualified_object_name, object_data IN SELECT * FROM jsonb_each(all_objects_data) LOOP
 
-    object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+    object_name := regexp_replace(qualified_object_name, '^(?:' || template_schema_name || '\.' || template_prefix || ')?(.*)$', '\1');
 
     RAISE DEBUG '-- [CONSTRAINTS] TABLE: %', object_name;
 
     IF (object_data->>'constraints') IS NOT NULL THEN
 
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'constraints') LOOP
-        FOREACH query IN ARRAY ARRAY[format('ALTER TABLE %1$s.%2$I ADD CONSTRAINT %3$I %4$s;',
+
+        name := json_object->>'name';
+        IF template_prefix <> '' THEN
+          name := regexp_replace(name, template_prefix, prefix);
+        END IF;
+
+        FOREACH query IN ARRAY ARRAY[format('ALTER TABLE %1$s.%5$s%2$I ADD CONSTRAINT %3$I %4$s;',
           schema_name,
           object_name,
-          json_object->>'name',
-          json_object->>'definition'
+          name,
+          json_object->>'definition',
+          prefix
         )]
         LOOP
           -- RAISE DEBUG '%', query;
