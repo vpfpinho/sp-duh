@@ -37,7 +37,7 @@ module SP
 
             def do_execute
               SP::Duh::Db::Transfer.log_with_time "Executing backup..."
-              command = "pg_dump -Fc -O --quote-all-identifiers -n #{@schemas.join(' -n ')} -U #{@connection.user} #{@connection.db} > #{Time.now.strftime('%Y%m%d%H%M')}_c#{@company_id}.dump"
+              command = "pg_dump -Fc -O --quote-all-identifiers -n #{@schemas.join(' -n ')} -U #{@connection.user} --data-only #{@connection.db} > #{Time.now.strftime('%Y%m%d%H%M')}_c#{@company_id}.dump"
               SP::Duh::Db::Transfer.log_with_time command
               result = %x[ #{command} ]
             end
