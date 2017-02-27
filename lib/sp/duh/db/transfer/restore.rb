@@ -29,7 +29,7 @@ module SP
               @schemas = @connection.exec %Q[
                 SELECT * FROM transfer.restore_before_before_execute(#{@company_id});
               ]
-              command = "pg_restore -Fc -n _meta_ -U #{@connection.user} -d #{@connection.db} < #{@dump_file}"
+              command = "pg_restore -Fc -n _meta_ --data-only -U #{@connection.user} -d #{@connection.db} < #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Restoring the backup metadata..."
               SP::Duh::Db::Transfer.log_with_time command
               result = %x[ #{command} ]
