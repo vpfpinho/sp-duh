@@ -17,7 +17,6 @@ DECLARE
   json_object           JSON;
   query                 TEXT;
   aux                   TEXT;
-  original_search_path  TEXT;
   before_query          TEXT;
   after_query           TEXT;
   before_queries        TEXT[];
@@ -25,11 +24,7 @@ DECLARE
   excluded_prefix       TEXT;
 BEGIN
 
-  SHOW search_path INTO original_search_path;
-
   IF all_objects_data IS NULL THEN
-    SET search_path TO '';
-
     -- Get the necessary data to create the new tables
     query := FORMAT('
       SELECT
@@ -47,8 +42,6 @@ BEGIN
     END LOOP;
     EXECUTE query INTO all_objects_data;
   END IF;
-
-  EXECUTE 'SET search_path to ' || schema_name || ', public';
 
   ----------------------
   -- Build the tables --
@@ -129,8 +122,6 @@ BEGIN
     END LOOP;
 
   END LOOP;
-
-  EXECUTE 'SET search_path TO ''' || original_search_path || '''';
 
   RETURN TRUE;
 END;

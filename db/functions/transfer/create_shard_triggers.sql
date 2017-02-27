@@ -14,14 +14,9 @@ DECLARE
   object_name             TEXT;
   json_object             JSON;
   query                   TEXT;
-  original_search_path    TEXT;
 BEGIN
 
-  SHOW search_path INTO original_search_path;
-
   IF all_objects_data IS NULL THEN
-    SET search_path TO '';
-
     -- Get the necessary data to create the new triggers
     SELECT
       json_object_agg(i.qualified_object_name,
@@ -31,8 +26,6 @@ BEGIN
       )::JSONB INTO all_objects_data
     FROM sharding.get_tables_info(template_schema_name, template_prefix) i;
   END IF;
-
-  EXECUTE 'SET search_path to ' || schema_name || ', public';
 
   ------------------------
   -- Build the triggers --
@@ -55,8 +48,6 @@ BEGIN
       END LOOP;
     END IF;
   END LOOP;
-
-  EXECUTE 'SET search_path TO ''' || original_search_path || '''';
 
   RETURN TRUE;
 END;

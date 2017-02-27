@@ -15,16 +15,12 @@ DECLARE
   object_name           TEXT;
   new_object_name       TEXT;
   query                 TEXT;
-  original_search_path  TEXT;
   i                     INTEGER;
   excluded_prefix       TEXT;
 BEGIN
 
   template_schema_name := template_schema_names[1];
   schema_name := schema_names[1];
-
-  SHOW search_path INTO original_search_path;
-  EXECUTE 'SET search_path to ' || schema_name || ', public';
 
   ---------------------
   -- Build the views --
@@ -69,8 +65,6 @@ BEGIN
     -- RAISE DEBUG '%', query;
     EXECUTE query;
   END LOOP;
-
-  EXECUTE 'SET search_path TO ''' || original_search_path || '''';
 
   RETURN TRUE;
 END;
