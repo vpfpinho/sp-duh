@@ -11,6 +11,7 @@ DECLARE
   foreign_table               RECORD;
   query                       text;
   schema                      text;
+  columns_list                text;
 BEGIN
 
   -- Validate the company's info
@@ -51,23 +52,40 @@ BEGIN
   RAISE NOTICE 'Source timestamp %', source_info.backed_up_at;
   RAISE NOTICE 'Source schema version %', source_info.schema_version;
 
-  -- Restore the source foreign keys first
+  ----------------------------------------------
+  -- Restore the source FOREIGN RECORDS first --
+  ----------------------------------------------
 
   FOR foreign_table IN SELECT * FROM transfer.get_foreign_tables_to_transfer() LOOP
+
+    SELECT
+      array_to_string(get_columns_list_for_table, ', ')
+    FROM
+      transfer.get_columns_list_for_table(meta_schema, foreign_table.schema_name || '_' || foreign_table.table_name)
+    INTO
+      columns_list;
+
     RAISE NOTICE 'Restoring foreign records in table %.%_%', meta_schema, foreign_table.schema_name, foreign_table.table_name;
     EXECUTE
       FORMAT('
         ALTER TABLE %2$s.%1$s DISABLE TRIGGER ALL
       ', foreign_table.table_name, foreign_table.schema_name);
-    EXECUTE
-      FORMAT('
-        INSERT INTO %3$s.%2$s
-        SELECT * FROM %1$s.%3$s_%2$s
-      ', meta_schema, foreign_table.table_name, foreign_table.schema_name);
+
+    query := FORMAT('
+                INSERT INTO %3$s.%2$s
+                (%4$s)
+                SELECT
+                %4$s
+                FROM %1$s.%3$s_%2$s
+              ', meta_schema, foreign_table.table_name, foreign_table.schema_name, columns_list);
+    -- RAISE DEBUG '%', query;
+    EXECUTE query;
+
     EXECUTE
       FORMAT('
         ALTER TABLE %2$s.%1$s ENABLE TRIGGER ALL
       ', foreign_table.table_name, foreign_table.schema_name);
+
   END LOOP;
 
   -- Create the schemas being restored (otherwise the pg_restore command won't work)
