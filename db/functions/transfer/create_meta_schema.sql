@@ -21,7 +21,10 @@ BEGIN
       company_name              character varying(255),
       schema_version            character varying(255),
       backed_up_at              timestamp with time zone,
-      backed_up_schemas         text[]
+      backed_up_schemas         text[],
+      main_schema               text,
+      accounting_schemas        text[],
+      fiscal_years              JSON DEFAULT NULL
     );
   ', meta_schema);
 

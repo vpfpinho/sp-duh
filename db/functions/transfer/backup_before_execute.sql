@@ -1,15 +1,17 @@
 DROP FUNCTION IF EXISTS transfer.backup_before_execute(bigint);
 CREATE OR REPLACE FUNCTION transfer.backup_before_execute(
-  company_id      bigint
+  company_id          bigint
 ) RETURNS TABLE (
-  schema_name     text,
-  schema_type     text
+  schema_name         text,
+  schema_type         text
 ) AS $BODY$
 DECLARE
-  meta_schema     text;
-  foreign_table   RECORD;
-  query           text;
-  company_users   text;
+  meta_schema         text;
+  foreign_table       RECORD;
+  query               text;
+  company_users       text;
+  accounting_schema   text;
+  all_table_prefixes  JSON;
 BEGIN
 
   -- Assert that the company exists and can be backed up!
@@ -25,6 +27,9 @@ BEGIN
 
   EXECUTE
     FORMAT('
+      WITH schema_info AS (
+        SELECT * FROM transfer.get_company_schemas_to_backup(%2$L)
+      )
       INSERT INTO %1$s.info
         SELECT
           c.id AS company_id,
@@ -32,10 +37,55 @@ BEGIN
           c.company_name,
           (SELECT version FROM public.schema_migrations ORDER BY version DESC LIMIT 1) AS schema_version,
           now() AS backed_up_at,
-          (SELECT array_agg(schema_name) FROM transfer.get_company_schemas_to_backup(%2$L) WHERE schema_type <> ''meta'') AS backed_up_schemas
+          (SELECT array_agg(schema_name) FROM schema_info WHERE schema_type <> ''meta'') AS backed_up_schemas,
+          (SELECT schema_name FROM schema_info WHERE schema_type = ''main'' LIMIT 1) AS main_schema,
+          (SELECT array_agg(schema_name) FROM schema_info WHERE schema_type = ''accounting'') || ''{}'' AS accounting_schemas
           FROM public.companies c
           WHERE c.id = %2$L
     ', meta_schema, company_id);
+
+  -- Get fiscal years information
+
+  query := '';
+  FOR accounting_schema IN
+    SELECT s.schema_name FROM transfer.get_company_schemas_to_backup(company_id) s WHERE s.schema_type = 'accounting'
+  LOOP
+    IF query <> '' THEN
+      query := query || '
+        UNION
+      ';
+    END IF;
+    query := query || FORMAT('
+      SELECT ''%1$s''::text AS schema_name, table_prefix::text FROM %1$s.fiscal_years
+    ', accounting_schema);
+  END LOOP;
+
+  IF query <> '' THEN
+    query := '
+      WITH fiscal_years AS (
+    ' || query || '
+      ),
+      agg_fiscal_years AS (
+        SELECT fy.schema_name, array_agg(fy.table_prefix) AS table_prefixes
+        FROM fiscal_years fy
+        GROUP BY fy.schema_name
+      )
+      SELECT
+        json_object_agg(fy.schema_name,
+          json_build_object(
+            ''prefixes'', fy.table_prefixes
+          )
+        )::JSON
+      FROM agg_fiscal_years fy
+    ';
+    EXECUTE query INTO all_table_prefixes;
+
+    EXECUTE
+      FORMAT('
+        UPDATE %1$s.info
+        SET fiscal_years = ''%2$s''
+      ', meta_schema, all_table_prefixes);
+  END IF;
 
   -- Backup all foreign records
 
