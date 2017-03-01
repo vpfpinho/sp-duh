@@ -3,15 +3,15 @@ namespace :sp do
     namespace :transfer do
 
       desc "Backup a sharded company for restoring to a different database"
-      task :backup, [ :company_id ] => :environment do |task, arguments|
+      task :backup, [ :company_id, :backup_file ] => :environment do |task, arguments|
 
         if arguments[:company_id].nil?
-          raise "Usage: rake sp:duh:transfer:backup[<company_id>]"
+          raise "Usage: rake sp:duh:transfer:backup[<company_id> [, <backup_file> ]]"
         end
 
         company_id = arguments[:company_id].to_i
         backer = SP::Duh::Db::Transfer::Backup.new(ActiveRecord::Base.connection.raw_connection)
-        backer.execute(company_id)
+        backer.execute(company_id, arguments[:backup_file])
 
       end
 

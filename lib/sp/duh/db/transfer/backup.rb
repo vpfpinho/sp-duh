@@ -13,12 +13,12 @@ module SP
             @connection = source_pg_connection
           end
 
-          def execute(company_id)
+          def execute(company_id, dump_file = nil)
             @company_id = company_id
             yield(:before_execute) if block_given?
             before_execute
             yield(:do_execute) if block_given?
-            do_execute
+            do_execute(dump_file)
             yield(:after_execute) if block_given?
             after_execute
           end
@@ -35,9 +35,10 @@ module SP
               @schemas = @schemas.map { |result| result['schema_name'] }
             end
 
-            def do_execute
+            def do_execute(dump_file = nil)
               SP::Duh::Db::Transfer.log_with_time "Executing backup..."
-              command = "pg_dump -Fc -O --quote-all-identifiers -n #{@schemas.join(' -n ')} -U #{@connection.user} --data-only #{@connection.db} > #{Time.now.strftime('%Y%m%d%H%M')}_c#{@company_id}.dump"
+              dump_file = "#{Time.now.strftime('%Y%m%d%H%M')}_c#{@company_id}.dump"  if dump_file.nil?
+              command = "pg_dump -Fc -O --quote-all-identifiers --data-only -n #{@schemas.join(' -n ')} -U #{@connection.user} #{@connection.db} > #{dump_file}"
               SP::Duh::Db::Transfer.log_with_time command
               result = %x[ #{command} ]
             end
