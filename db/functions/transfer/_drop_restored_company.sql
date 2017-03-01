@@ -1,5 +1,5 @@
-DROP FUNCTION IF EXISTS transfer._clear_foreign_tables(bigint);
-CREATE OR REPLACE FUNCTION transfer._clear_foreign_tables(
+DROP FUNCTION IF EXISTS transfer._drop_restored_company(bigint);
+CREATE OR REPLACE FUNCTION transfer._drop_restored_company(
   company_id      bigint
 ) RETURNS VOID AS $BODY$
 DECLARE
