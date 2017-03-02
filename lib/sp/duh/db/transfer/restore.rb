@@ -9,20 +9,32 @@ module SP
             @connection = destination_pg_connection
           end
 
-          def execute(company_id, dump_file)
+          def execute(company_id, dump_file, skip = false)
+
             @company_id = company_id
             @dump_file = dump_file
-            yield(:before_execute) if block_given?
-            before_execute
-            yield(:do_execute) if block_given?
-            do_execute
-            yield(:after_execute) if block_given?
-            after_execute
+
+            yield(:before, :before_execute) if block_given?
+            results = before_execute(skip)
+            yield(:after, :before_execute, results) if block_given?
+
+            return results if skip
+
+            yield(:before, :do_execute) if block_given?
+            results = do_execute
+            yield(:after, :do_execute, results) if block_given?
+
+            yield(:before, :after_execute) if block_given?
+            results = after_execute
+            yield(:after, :after_execute, results) if block_given?
+
+            return results
+
           end
 
           protected
 
-            def before_execute
+            def before_execute(skip = false)
               SP::Duh::Db::Transfer.log_with_time "STARTED restoring company #{@company_id} from dump #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Preparing restore..."
               @started_at = Time.now
@@ -33,9 +45,13 @@ module SP
               SP::Duh::Db::Transfer.log_with_time "Restoring the backup metadata..."
               SP::Duh::Db::Transfer.log_with_time command
               result = %x[ #{command} ]
-              SP::Duh::Db::Transfer.log_with_time "Processing metadata and foreign records..."
+              if skip
+                SP::Duh::Db::Transfer.log_with_time "Processing metadata..."
+              else
+                SP::Duh::Db::Transfer.log_with_time "Processing metadata and foreign records..."
+              end
               @schemas = @connection.exec %Q[
-                SELECT * FROM transfer.restore_after_before_execute(#{@company_id});
+                SELECT * FROM transfer.restore_after_before_execute(#{@company_id}, #{skip});
               ]
               @schemas = @schemas.map { |result| result['schema_name'] }
             end

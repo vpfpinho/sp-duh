@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.restore_after_before_execute(bigint);
+DROP FUNCTION IF EXISTS transfer.restore_after_before_execute(bigint, boolean);
 CREATE OR REPLACE FUNCTION transfer.restore_after_before_execute(
-  company_id                  bigint
+  company_id                  bigint,
+  validate_only               boolean DEFAULT false
 ) RETURNS TABLE (
   schema_name                 text
 ) AS $BODY$
@@ -12,6 +13,14 @@ DECLARE
   query                       text;
   schema                      text;
   columns_list                text;
+  main_schema_template        text;
+  accounting_schema_template  text;
+  fiscal_year_template        text;
+  accounting_schema           text;
+  prefixes                    JSON;
+  prefix                      text;
+  excluded_prefixes           text[];
+  has_fiscal_years            boolean;
 BEGIN
 
   -- Validate the company's info
@@ -49,54 +58,136 @@ BEGIN
       USING ERRCODE = 'BR005';
   END IF;
 
-  RAISE NOTICE 'Source timestamp %', source_info.backed_up_at;
-  RAISE NOTICE 'Source schema version %', source_info.schema_version;
+  -- Assert that there are avaliable templates to build the company in the destination database
 
-  ----------------------------------------------
-  -- Restore the source FOREIGN RECORDS first --
-  ----------------------------------------------
+  SELECT * FROM transfer.get_restore_templates(company_id)
+  INTO main_schema_template, accounting_schema_template, fiscal_year_template;
 
-  FOR foreign_table IN SELECT * FROM transfer.get_foreign_tables_to_transfer() LOOP
-
-    SELECT
-      array_to_string(get_columns_list_for_table, ', ')
-    FROM
-      transfer.get_columns_list_for_table(meta_schema, foreign_table.schema_name || '_' || foreign_table.table_name)
-    INTO
-      columns_list;
-
-    RAISE NOTICE 'Restoring foreign records in table %.%_%', meta_schema, foreign_table.schema_name, foreign_table.table_name;
-    EXECUTE
-      FORMAT('
-        ALTER TABLE %2$s.%1$s DISABLE TRIGGER ALL
-      ', foreign_table.table_name, foreign_table.schema_name);
-
-    query := FORMAT('
-                INSERT INTO %3$s.%2$s
-                (%4$s)
-                SELECT
-                %4$s
-                FROM %1$s.%3$s_%2$s
-              ', meta_schema, foreign_table.table_name, foreign_table.schema_name, columns_list);
-    -- RAISE DEBUG '%', query;
-    EXECUTE query;
-
-    EXECUTE
-      FORMAT('
-        ALTER TABLE %2$s.%1$s ENABLE TRIGGER ALL
-      ', foreign_table.table_name, foreign_table.schema_name);
-
+  has_fiscal_years := false;
+  FOR accounting_schema, prefixes IN SELECT * FROM json_each(source_info.fiscal_years) LOOP
+    FOR prefix IN SELECT * FROM json_array_elements(prefixes->'prefixes') LOOP
+      has_fiscal_years := true;
+    END LOOP;
   END LOOP;
 
-  -- Create the schemas being restored (otherwise the pg_restore command won't work)
+  IF COALESCE(main_schema_template, '') = '' THEN
+    RAISE EXCEPTION 'There are no sharded companies in the destination database that can serve as templates for the restore.'
+      USING ERRCODE = 'BR006';
+  END IF;
+  IF cardinality(source_info.accounting_schemas) > 0 AND COALESCE(accounting_schema_template, '') = '' THEN
+    RAISE EXCEPTION 'There are no accounting companies in the destination database that can serve as templates for the restore.'
+      USING ERRCODE = 'BR007';
+  END IF;
+  IF has_fiscal_years = true AND COALESCE(fiscal_year_template, '') = '' THEN
+    RAISE EXCEPTION 'There are no fiscal years in the destination database that can serve as templates for the restore.'
+      USING ERRCODE = 'BR008';
+  END IF;
 
-  FOREACH schema IN ARRAY source_info.backed_up_schemas LOOP
-    EXECUTE
-      FORMAT('
-        DROP SCHEMA IF EXISTS %1$s CASCADE;
-        CREATE SCHEMA %1$s;
-      ', schema);
-  END LOOP;
+  -- Show backup info
+
+  RAISE NOTICE '------------------------';
+  RAISE NOTICE 'Source information:';
+  RAISE NOTICE '------------------------';
+  RAISE NOTICE '   Company % - % (%)', source_info.tax_registration_number, source_info.company_name, source_info.company_id;
+  RAISE NOTICE '   Schemas and prefixes:';
+  RAISE NOTICE '      Company schema %', source_info.main_schema;
+  RAISE NOTICE '      Accounting schemas %', source_info.accounting_schemas;
+  RAISE NOTICE '      Fiscal years %', source_info.fiscal_years;
+  RAISE NOTICE '   Schema version %', source_info.schema_version;
+  RAISE NOTICE '   Backed up at %', source_info.backed_up_at;
+
+  -- Show restore info
+
+  RAISE NOTICE '------------------------';
+  RAISE NOTICE 'Destination information:';
+  RAISE NOTICE '------------------------';
+  RAISE NOTICE '   Template schemas and prefixes:';
+  RAISE NOTICE '      Company schema template %', main_schema_template;
+  RAISE NOTICE '      Accounting schema template %', accounting_schema_template;
+  RAISE NOTICE '      Fiscal year template %', fiscal_year_template;
+  RAISE NOTICE '   Schema version %', destination_schema_version;
+  RAISE NOTICE '------------------------';
+
+  IF NOT validate_only THEN
+
+    ----------------------------------------------
+    -- Restore the source FOREIGN RECORDS first --
+    ----------------------------------------------
+
+    FOR foreign_table IN SELECT * FROM transfer.get_foreign_tables_to_transfer() LOOP
+
+      SELECT
+        array_to_string(get_columns_list_for_table, ', ')
+      FROM
+        transfer.get_columns_list_for_table(meta_schema, foreign_table.schema_name || '_' || foreign_table.table_name)
+      INTO
+        columns_list;
+
+      -- TO DO: replace trigger disabling with some other mechanism (trigger skipping in code?)
+      RAISE NOTICE 'Restoring foreign records in table %.%_%', meta_schema, foreign_table.schema_name, foreign_table.table_name;
+      EXECUTE
+        FORMAT('
+          ALTER TABLE %2$s.%1$s DISABLE TRIGGER ALL
+        ', foreign_table.table_name, foreign_table.schema_name);
+
+      query := FORMAT('
+                  INSERT INTO %3$s.%2$s
+                  (%4$s)
+                  SELECT
+                  %4$s
+                  FROM %1$s.%3$s_%2$s
+                ', meta_schema, foreign_table.table_name, foreign_table.schema_name, columns_list);
+      -- RAISE DEBUG '%', query;
+      EXECUTE query;
+
+      -- TO DO: replace trigger disabling with some other mechanism (trigger skipping in code?)
+      EXECUTE
+        FORMAT('
+          ALTER TABLE %2$s.%1$s ENABLE TRIGGER ALL
+        ', foreign_table.table_name, foreign_table.schema_name);
+
+    END LOOP;
+
+    ----------------------------------------
+    -- Create the SCHEMAS being restored  --
+    ----------------------------------------
+
+    FOREACH schema IN ARRAY source_info.backed_up_schemas LOOP
+      RAISE NOTICE 'Creating schema %', schema;
+      EXECUTE
+        FORMAT('
+          DROP SCHEMA IF EXISTS %1$s CASCADE;
+          CREATE SCHEMA %1$s;
+        ', schema);
+    END LOOP;
+
+    ---------------------------------------
+    -- Create the TABLES being restored  --
+    ---------------------------------------
+
+    -- MAIN company schema tables
+    RAISE NOTICE 'Creating tables in schema %', source_info.main_schema;
+    PERFORM transfer.create_shard_tables(main_schema_template, source_info.main_schema);
+
+    -- ACCOUNTING companies schema tables
+    EXECUTE FORMAT('
+      SELECT array_agg(table_prefix) from %1$s.fiscal_years
+    ', accounting_schema_template)
+    INTO STRICT excluded_prefixes;
+    FOREACH accounting_schema IN ARRAY source_info.accounting_schemas LOOP
+      RAISE NOTICE 'Creating (global) tables in schema %', accounting_schema;
+      PERFORM transfer.create_shard_tables(accounting_schema_template, accounting_schema, '', '', excluded_prefixes);
+    END LOOP;
+
+    -- Accounting companies FISCAL YEARS schema tables
+    FOR accounting_schema, prefixes IN SELECT * FROM json_each(source_info.fiscal_years) LOOP
+      FOREACH prefix IN ARRAY ARRAY(SELECT trim(fy::text, '"') FROM json_array_elements(prefixes->'prefixes') fy) LOOP
+        RAISE NOTICE 'Creating tables in schema % with prefix %', accounting_schema, prefix;
+        PERFORM transfer.create_shard_tables(accounting_schema_template, accounting_schema, fiscal_year_template, prefix);
+      END LOOP;
+    END LOOP;
+
+  END IF;
 
   -- Return the companies' schemas to include in the main restore
   RETURN QUERY EXECUTE FORMAT('SELECT * FROM unnest(%1$L::text[])', source_info.backed_up_schemas);

@@ -29,6 +29,20 @@ namespace :sp do
 
       end
 
+      desc "Validate and get info from a sharded company backup"
+      task :check, [ :company_id, :backup_file ] => :environment do |task, arguments|
+
+        if arguments[:company_id].nil? || arguments[:backup_file].nil?
+          raise "Usage: rake sp:duh:transfer:check[<company_id>, <backup_file>]"
+        end
+
+        company_id = arguments[:company_id].to_i
+        backup_file = arguments[:backup_file].to_s
+        restorer = SP::Duh::Db::Transfer::Restore.new(ActiveRecord::Base.connection.raw_connection)
+        restorer.execute(company_id, backup_file, true)
+
+      end
+
     end
   end
 end
