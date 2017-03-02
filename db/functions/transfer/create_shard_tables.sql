@@ -19,7 +19,6 @@ DECLARE
   aux                   TEXT;
   before_query          TEXT;
   after_query           TEXT;
-  before_queries        TEXT[];
   after_queries         TEXT[];
   excluded_prefix       TEXT;
 BEGIN
@@ -51,7 +50,7 @@ BEGIN
 
     -- Reset variables
     aux := NULL;
-    before_queries := '{}';
+    -- before_queries := '{}';
     after_queries := '{}';
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
@@ -74,20 +73,28 @@ BEGIN
 
           col_default_value := regexp_replace(json_object->>'default_value', 'nextval\(''' || template_schema_name || '\.' || template_prefix, 'nextval(''' || schema_name || '.' || prefix);
 
-          before_queries := before_queries
-                        || format('CREATE SEQUENCE %1$s.%2$s%3$I;', schema_name, prefix, aux);
-          after_queries := after_queries
-                        || format('ALTER SEQUENCE %1$s.%5$s%2$I OWNED BY %1$s.%3$I.%4$I;', schema_name, aux, object_name, json_object->>'name', prefix);
-                        -- No need to set the counter, it will be set during the pg_restore
-                        -- || format('
-                        --       DO $$
-                        --       DECLARE
-                        --         seq_nextval BIGINT;
-                        --       BEGIN
-                        --         SELECT last_value FROM %4$s.%5$s%3$I INTO seq_nextval;
-                        --         EXECUTE FORMAT(''ALTER SEQUENCE %1$s.%2$s%3$I RESTART WITH %%1$s'', seq_nextval);
-                        --       END$$;
-                        --    ', schema_name, prefix, aux, template_schema_name, template_prefix);
+          -- Check if the sequence already exists (may be used more than once)
+          RAISE DEBUG '-- [SEQUENCES] TABLE: % TEST FOR SEQUENCE: %', object_name, prefix || aux;
+          IF NOT EXISTS(SELECT 1 FROM to_regclass((schema_name || '.' || prefix || aux)::cstring) s WHERE s IS NOT NULL) THEN
+            RAISE DEBUG '-- [SEQUENCES] TABLE: % SEQUENCE: %', object_name, prefix || aux;
+
+            before_query := format('CREATE SEQUENCE %1$s.%2$s%3$I;', schema_name, prefix, aux);
+            -- RAISE DEBUG '%', before_query;
+            EXECUTE before_query;
+
+            after_queries := after_queries
+                          || format('ALTER SEQUENCE %1$s.%5$s%2$I OWNED BY %1$s.%3$I.%4$I;', schema_name, aux, object_name, json_object->>'name', prefix);
+                          -- No need to set the counter, it will be set during the pg_restore
+                          -- || format('
+                          --       DO $$
+                          --       DECLARE
+                          --         seq_nextval BIGINT;
+                          --       BEGIN
+                          --         SELECT last_value FROM %4$s.%5$s%3$I INTO seq_nextval;
+                          --         EXECUTE FORMAT(''ALTER SEQUENCE %1$s.%2$s%3$I RESTART WITH %%1$s'', seq_nextval);
+                          --       END$$;
+                          --    ', schema_name, prefix, aux, template_schema_name, template_prefix);
+          END IF;
         END IF;
       END IF;
 
@@ -102,12 +109,6 @@ BEGIN
         CASE WHEN col_default_value IS NOT NULL THEN format(' DEFAULT %1$s', col_default_value) END
       );
 
-    END LOOP;
-
-    FOREACH before_query IN ARRAY before_queries
-    LOOP
-      -- RAISE DEBUG '%', before_query;
-      EXECUTE before_query;
     END LOOP;
 
     query := LEFT(query, length(query) - 2) || ');';
