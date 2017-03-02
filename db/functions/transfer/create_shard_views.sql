@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS transfer.create_shard_views(TEXT[], TEXT[], TEXT, TEXT, TEXT[]);
-
 CREATE OR REPLACE FUNCTION transfer.create_shard_views(
   template_schema_names   TEXT[],
   schema_names            TEXT[],

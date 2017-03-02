@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS transfer.create_shard_foreign_keys(TEXT, TEXT, TEXT, TEXT, JSONB);
-
 CREATE OR REPLACE FUNCTION transfer.create_shard_foreign_keys(
   template_schema_name    TEXT,
   schema_name             TEXT,

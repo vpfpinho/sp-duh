@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS transfer.create_shard_triggers(TEXT, TEXT, TEXT, TEXT, JSONB);
-
 CREATE OR REPLACE FUNCTION transfer.create_shard_triggers(
   template_schema_name    TEXT,
   schema_name             TEXT,
