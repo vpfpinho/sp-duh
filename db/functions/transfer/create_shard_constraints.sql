@@ -1,6 +1,6 @@
-DROP FUNCTION IF EXISTS transfer.create_shard_constraints(TEXT, TEXT, TEXT, TEXT, JSONB);
-
+DROP FUNCTION IF EXISTS transfer.create_shard_constraints(BIGINT, TEXT, TEXT, TEXT, TEXT, JSONB);
 CREATE OR REPLACE FUNCTION transfer.create_shard_constraints(
+  company_id              BIGINT,
   template_schema_name    TEXT,
   schema_name             TEXT,
   template_prefix         TEXT DEFAULT '',
@@ -15,6 +15,7 @@ DECLARE
   json_object             JSON;
   query                   TEXT;
   name                    TEXT;
+  aux                     TEXT;
 BEGIN
 
   IF all_objects_data IS NULL THEN
@@ -42,6 +43,8 @@ BEGIN
 
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'constraints') LOOP
 
+        aux := regexp_replace(json_object->>'definition', 'company_id\s*=\s*\d+', format('company_id = %1$s', company_id));
+
         name := json_object->>'name';
         IF template_prefix <> '' THEN
           name := regexp_replace(name, template_prefix, prefix);
@@ -51,7 +54,7 @@ BEGIN
           schema_name,
           object_name,
           name,
-          json_object->>'definition',
+          aux,
           prefix
         )]
         LOOP
