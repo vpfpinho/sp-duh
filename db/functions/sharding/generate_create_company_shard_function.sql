@@ -430,13 +430,15 @@ BEGIN
       query                   TEXT;
       seq_nextval             BIGINT;
       previous_search_path    TEXT;
-      spath                   TEXT;
-      rec                     RECORD;
       current_public_triggers TEXT[];
+      tablespace_name         TEXT;
     BEGIN
       SHOW search_path INTO previous_search_path;
       EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
-      SHOW search_path INTO spath;
+
+      tablespace_name := format('tablespace_%%1$s', right(left(p_company_schema_name, 11), 2));
+
+      EXECUTE 'SET default_tablespace TO ' || tablespace_name;
 
       SELECT array_agg('public.' || c.relname || '::' || t.tgname)
       FROM pg_trigger t
@@ -449,8 +451,14 @@ BEGIN
       %1$s
 
       EXECUTE 'SET search_path to ' || previous_search_path;
+      SET default_tablespace TO '';
 
       RETURN TRUE;
+    EXCEPTION
+        WHEN OTHERS THEN
+          EXECUTE 'SET search_path to ' || previous_search_path;
+          SET default_tablespace TO '';
+          RAISE;
     END;
     $FUNCTION_BODY$ LANGUAGE 'plpgsql';
   $$,
