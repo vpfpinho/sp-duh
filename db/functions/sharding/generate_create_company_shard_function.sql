@@ -436,9 +436,12 @@ BEGIN
       SHOW search_path INTO previous_search_path;
       EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
 
-      tablespace_name := format('tablespace_%%1$s', right(left(p_company_schema_name, 11), 2));
+      IF sharding.get_option('use_tablespaces') THEN
+        RAISE NOTICE 'SETTING tablespace';
+        tablespace_name := format('tablespace_%%1$s', right(left(p_company_schema_name, 11), 2));
 
-      EXECUTE 'SET default_tablespace TO ' || tablespace_name;
+        EXECUTE 'SET default_tablespace TO ' || tablespace_name;
+      END IF;
 
       SELECT array_agg('public.' || c.relname || '::' || t.tgname)
       FROM pg_trigger t
@@ -451,13 +454,19 @@ BEGIN
       %1$s
 
       EXECUTE 'SET search_path to ' || previous_search_path;
-      SET default_tablespace TO '';
+      IF sharding.get_option('use_tablespaces') THEN
+        SET default_tablespace TO '';
+      END IF;
 
       RETURN TRUE;
     EXCEPTION
         WHEN OTHERS THEN
           EXECUTE 'SET search_path to ' || previous_search_path;
-          SET default_tablespace TO '';
+
+          IF sharding.get_option('use_tablespaces') THEN
+            SET default_tablespace TO '';
+          END IF;
+
           RAISE;
     END;
     $FUNCTION_BODY$ LANGUAGE 'plpgsql';
