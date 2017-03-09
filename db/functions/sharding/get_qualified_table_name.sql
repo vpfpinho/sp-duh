@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.get_qualified_table_name(INTEGER, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.get_qualified_table_name(INTEGER, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.get_qualified_table_name(
   IN  company_id      INTEGER,

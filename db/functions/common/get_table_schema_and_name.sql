@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.get_table_schema_and_name(TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS common.get_table_schema_and_name(TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION common.get_table_schema_and_name(
   IN  full_table_name      TEXT,

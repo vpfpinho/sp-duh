@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.create_safety_triggers_for_sharded_companies();
+-- DROP FUNCTION IF EXISTS sharding.create_safety_triggers_for_sharded_companies();
 
 CREATE OR REPLACE FUNCTION sharding.create_safety_triggers_for_sharded_companies()
 RETURNS VOID AS $BODY$

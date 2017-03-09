@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.trigger_exists(TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.trigger_exists(TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.trigger_exists (
   IN p_relation_name TEXT,

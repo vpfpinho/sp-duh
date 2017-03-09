@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.schema_exists(TEXT);
+-- DROP FUNCTION IF EXISTS common.schema_exists(TEXT);
 
 CREATE OR REPLACE FUNCTION common.schema_exists(schema_name TEXT)
 RETURNS BOOLEAN AS $BODY$

@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.enable_triggers_on_table(TEXT, VARIADIC TEXT[]);
+-- DROP FUNCTION IF EXISTS common.enable_triggers_on_table(TEXT, VARIADIC TEXT[]);
 
 CREATE OR REPLACE FUNCTION common.enable_triggers_on_table(
   IN        table_name       TEXT,

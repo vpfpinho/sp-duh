@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.create_virtual_foreign_key(TEXT, TEXT[], TEXT, TEXT[], TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.create_virtual_foreign_key(TEXT, TEXT[], TEXT, TEXT[], TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.create_virtual_foreign_key(
   IN p_referencing_table TEXT,

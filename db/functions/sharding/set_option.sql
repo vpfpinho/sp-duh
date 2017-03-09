@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.set_option(TEXT, BOOLEAN);
+-- DROP FUNCTION IF EXISTS sharding.set_option(TEXT, BOOLEAN);
 
 CREATE OR REPLACE FUNCTION sharding.set_option(
   IN option_name TEXT,

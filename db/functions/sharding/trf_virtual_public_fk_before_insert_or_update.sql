@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.trf_virtual_public_fk_before_insert_or_update() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_virtual_public_fk_before_insert_or_update() CASCADE;
 
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_public_fk_before_insert_or_update()
 RETURNS TRIGGER AS $BODY$

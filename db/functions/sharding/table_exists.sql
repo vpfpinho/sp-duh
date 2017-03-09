@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.table_exists(TEXT);
+-- DROP FUNCTION IF EXISTS sharding.table_exists(TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.table_exists (
   IN p_relation_name TEXT

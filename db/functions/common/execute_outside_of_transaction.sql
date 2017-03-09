@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.execute_outside_of_transaction(TEXT);
+-- DROP FUNCTION IF EXISTS common.execute_outside_of_transaction(TEXT);
 
 CREATE OR REPLACE FUNCTION common.execute_outside_of_transaction(query TEXT)
 RETURNS TEXT AS
