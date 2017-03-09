@@ -9,16 +9,20 @@ module SP
 
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
             def do_request_on_the_db(path, schema, prefix, params, method, sharded_schema = nil)
-
-              response = service.connection.exec ActiveRecord::Base.send(:sanitize_sql, [
-                "SELECT * FROM public.jsonapi(:method, :path, :params, :schema, :prefix, :sharded_schema)",
-                method: method,
-                path: method == 'GET' ? url_with_params_for_query(path, params) : url(path),
-                params: method == 'GET' ? '' : params_for_body(params),
-                schema: schema,
-                prefix: prefix,
+              sharded_schema_sql = ActiveRecord::Base.send(:sanitize_sql, [
+                ":sharded_schema",
                 sharded_schema: sharded_schema
               ], '')
+
+              if method == 'GET'
+                response = service.connection.exec %Q[
+                  SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', '#{schema}', '#{prefix}', #{sharded_schema_sql});
+                ]
+              else
+                response = service.connection.exec %Q[
+                  SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', '#{schema}', '#{prefix}', #{sharded_schema_sql});
+                ]
+              end
 
               response.first['jsonapi'] if response.first
             end
