@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.wrap_with_duplicate_check(TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.wrap_with_duplicate_check(TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.wrap_with_duplicate_check(
   IN p_query        TEXT,

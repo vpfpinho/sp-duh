@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.create_virtual_polymorphic_foreign_key(TEXT, TEXT, JSONB, TEXT, "char", "char", JSONB);
+-- DROP FUNCTION IF EXISTS sharding.create_virtual_polymorphic_foreign_key(TEXT, TEXT, JSONB, TEXT, "char", "char", JSONB);
 
 CREATE OR REPLACE FUNCTION sharding.create_virtual_polymorphic_foreign_key(
   IN p_referencing_table TEXT,

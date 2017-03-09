@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.get_items_matching_regexp(TEXT[], TEXT);
+-- DROP FUNCTION IF EXISTS common.get_items_matching_regexp(TEXT[], TEXT);
 
 CREATE OR REPLACE FUNCTION common.get_items_matching_regexp(
   IN p_items TEXT[],

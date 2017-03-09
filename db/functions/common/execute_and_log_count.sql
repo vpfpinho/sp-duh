@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.execute_and_log_count(TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS common.execute_and_log_count(TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION common.execute_and_log_count(
   IN query TEXT,

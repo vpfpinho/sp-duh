@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.get_column_default_value(TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.get_column_default_value(TEXT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.get_column_default_value(
   IN p_table_name TEXT,

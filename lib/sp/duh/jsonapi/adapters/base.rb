@@ -11,9 +11,9 @@ module SP
             @service = service
           end
 
-          def request(path, schema = '', prefix = '', params = nil, method = 'GET')
+          def request(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
             begin
-              do_request(path, schema, prefix, params, method)
+              do_request(path, schema, prefix, params, method, sharded_schema)
             rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
               [
                 e.status,
@@ -27,19 +27,19 @@ module SP
             end
           end
 
-          def request!(path, schema = '', prefix = '', params = nil, method = 'GET')
-            do_request(path, schema, prefix, params, method)
+          def request!(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
+            do_request(path, schema, prefix, params, method, sharded_schema)
           end
 
-          def get(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'GET') ; end
-          def post(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'POST') ; end
-          def patch(path, schema = '', prefix = '', params = nil) ; request(path, schema, prefix, params, 'PATCH') ; end
-          def delete(path, schema = '', prefix = '') ; request(path, schema, prefix, nil, 'DELETE') ; end
+          def get(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'GET', sharded_schema) ; end
+          def post(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'POST', sharded_schema) ; end
+          def patch(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
+          def delete(path, schema = '', prefix = '', sharded_schema = nil) ; request(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
 
-          def get!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'GET') ; end
-          def post!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'POST') ; end
-          def patch!(path, schema = '', prefix = '', params = nil) ; request!(path, schema, prefix, params, 'PATCH') ; end
-          def delete!(path, schema = '', prefix = '') ; request!(path, schema, prefix, nil, 'DELETE') ; end
+          def get!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'GET', sharded_schema) ; end
+          def post!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'POST', sharded_schema) ; end
+          def patch!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
+          def delete!(path, schema = '', prefix = '', sharded_schema = nil) ; request!(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
 
           alias_method :put, :patch
           alias_method :put!, :patch!
@@ -84,7 +84,7 @@ module SP
             end
 
             # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-            def do_request(path, schema, prefix, params, method) ; ; end
+            def do_request(path, schema, prefix, params, method, sharded_schema = nil) ; ; end
 
             # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
             def unwrap_response(response)

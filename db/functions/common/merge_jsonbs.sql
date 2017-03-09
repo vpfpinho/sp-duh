@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.merge_jsonbs(VARIADIC JSONB[]);
+-- DROP FUNCTION IF EXISTS common.merge_jsonbs(VARIADIC JSONB[]);
 
 CREATE OR REPLACE FUNCTION common.merge_jsonbs(
   VARIADIC p_jsons JSONB[],

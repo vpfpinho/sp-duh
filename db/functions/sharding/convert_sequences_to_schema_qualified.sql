@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.convert_sequences_to_schema_qualified(TEXT);
+-- DROP FUNCTION IF EXISTS sharding.convert_sequences_to_schema_qualified(TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.convert_sequences_to_schema_qualified(p_schema_name TEXT)
 RETURNS INTEGER AS $BODY$

@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.array_search(ANYELEMENT, ANYARRAY);
+-- DROP FUNCTION IF EXISTS common.array_search(ANYELEMENT, ANYARRAY);
 
 CREATE FUNCTION common.array_search(needle ANYELEMENT, haystack ANYARRAY)
 RETURNS INT AS $$
