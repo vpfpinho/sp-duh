@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.get_convert_foreign_keys_from_public_to_sharded_tables_queries();
+-- DROP FUNCTION IF EXISTS sharding.get_convert_foreign_keys_from_public_to_sharded_tables_queries();
 CREATE OR REPLACE FUNCTION sharding.get_convert_foreign_keys_from_public_to_sharded_tables_queries(
   OUT queries TEXT[]
 )

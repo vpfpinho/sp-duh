@@ -5,12 +5,17 @@ module ActiveRecord
         true
       end
 
+      def initialize_with_redis_connection(connection, logger, connection_parameters, config)
+        @redis_connection = Rails.application.redis.optimizations.instance_variable_get(:@data)
+        initialize_without_redis_connection(connection, logger, connection_parameters, config)
+      end
+
       private
 
         def configure_connection_with_mappings
           # Build Ruby <-> PostgreSQL type mappings
-          results_map = PG::BasicTypeMapForResults.new(@connection)
-          queries_map = PG::BasicTypeMapForQueries.new(@connection)
+          results_map = PG::BasicTypeMapForResults.new(@connection, @redis_connection)
+          queries_map = PG::BasicTypeMapForQueries.new(@connection, @redis_connection)
 
           # Add a decoder for the NUMERIC PostgreSQL data type
           results_map.add_coder PG::TextDecoder::Float.new(oid: 1700, name: 'float8')
@@ -54,6 +59,24 @@ module ActiveRecord
           configure_connection_without_mappings
         end
 
+        # Override methods to store catalog data in Redis
+        %w(column_definitions primary_key table_exists?).each do |method|
+          method_name, punctuation = method.to_s.sub(/([?!=])$/, ''), $1
+
+          class_eval <<-METHOD, __FILE__, __LINE__ + 1
+            def #{method_name}_with_redis_cache#{punctuation}(table_name)
+              if !!@redis_connection
+                @redis_connection.get("postgresql:#{method_name}:\#{table_name}") || begin
+                  @redis_connection.set("postgresql:#{method_name}:\#{table_name}", d = #{method_name}_without_redis_cache#{punctuation}(table_name)) ; d
+                end
+              else
+                #{method_name}_without_redis_cache#{punctuation}(table_name)
+              end
+            end
+
+            alias_method_chain :#{method}, :redis_cache
+          METHOD
+        end
 
         def disable_referential_integrity_with_foreign_keys(&block)
           if Rails.env.test?
@@ -72,31 +95,60 @@ module ActiveRecord
 
         alias_method_chain :configure_connection, :mappings
         alias_method_chain :disable_referential_integrity, :foreign_keys
-   end
+        alias_method_chain :initialize, :redis_connection
+    end
   end
 end
 
 # This module MUST be loaded before the #configure_connection_with_mappings method is called
 module PG
+  class BasicTypeMapForResults
+    def initialize_with_redis_connection(connection, redis_connection = nil)
+      @redis_connection = redis_connection
+      initialize_without_redis_connection connection
+    end
+
+    alias_method_chain :initialize, :redis_connection
+  end
+
+  class BasicTypeMapForQueries
+    def initialize_with_redis_connection(connection, redis_connection = nil)
+      @redis_connection = redis_connection
+      initialize_without_redis_connection connection
+    end
+
+    alias_method_chain :initialize, :redis_connection
+  end
+
   module BasicTypeRegistry
 
     private
 
       def build_coder_maps(connection)
-        if supports_ranges?(connection)
-          result = connection.exec <<-SQL
+        if !!@redis_connection
+          @redis_connection.get('postgresql:coder-maps') || begin
+            @redis_connection.set('postgresql:coder-maps', m = get_coder_maps_from_database(connection)) ; m
+          end
+        else
+          get_coder_maps_from_database(connection)
+        end
+      end
+
+      def get_coder_maps_from_database(connection)
+        result = connection.exec(if supports_ranges?(connection)
+          <<-SQL
             SELECT n.nspname, t.oid, t.typname, t.typelem, t.typdelim, t.typinput, r.rngsubtype
             FROM pg_type as t
-            LEFT JOIN pg_range as r ON oid = rngtypid
-            LEFT JOIN pg_namespace n ON n.oid = t.typnamespace
+              LEFT JOIN pg_range as r ON oid = rngtypid
+              LEFT JOIN pg_namespace n ON n.oid = t.typnamespace
             WHERE n.nspname IN ('pg_catalog', 'public')
           SQL
         else
-          result = connection.exec <<-SQL
+          <<-SQL
             SELECT t.oid, t.typname, t.typelem, t.typdelim, t.typinput
             FROM pg_type as t
           SQL
-        end
+        end)
 
         [
           [0, :encoder, PG::TextEncoder::Array],

@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.get_option(TEXT);
+-- DROP FUNCTION IF EXISTS sharding.get_option(TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.get_option(
   IN option_name TEXT

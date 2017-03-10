@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_cascade() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_cascade() CASCADE;
 
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_delete_cascade()
 RETURNS TRIGGER AS $BODY$

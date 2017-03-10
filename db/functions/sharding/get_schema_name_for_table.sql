@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.get_schema_name_for_table(INTEGER, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.get_schema_name_for_table(INTEGER, TEXT);
 
 CREATE OR REPLACE FUNCTION sharding.get_schema_name_for_table(
   IN  company_id          INTEGER,

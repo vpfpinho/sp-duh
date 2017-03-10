@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.trf_prevent_unshard_of_sharded_companies() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_prevent_unshard_of_sharded_companies() CASCADE;
 
 CREATE OR REPLACE FUNCTION sharding.trf_prevent_unshard_of_sharded_companies()
 RETURNS TRIGGER AS $BODY$

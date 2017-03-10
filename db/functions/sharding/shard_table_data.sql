@@ -1,5 +1,5 @@
-DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT, TEXT, INTEGER, TEXT, TEXT, TEXT);
-DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT, TEXT, INTEGER, TEXT, TEXT, TEXT, BOOLEAN);
+-- DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT, TEXT, INTEGER, TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS sharding.shard_table_data(TEXT, TEXT, INTEGER, TEXT, TEXT, TEXT, BOOLEAN);
 
 CREATE OR REPLACE FUNCTION sharding.shard_table_data(
   IN OUT insert_queries             TEXT,
@@ -59,22 +59,22 @@ BEGIN
   p_insert_queries := array_cat(p_insert_queries, ARRAY['progress', format($ARRAY$SELECT common.execute_outside_of_transaction($$NOTIFY sharding_progress, '{ "company_id": %1$s, "step": "insert_data", "data": "%2$s", "message": "Copying data to %3$s.%2$s" }';$$);$ARRAY$, p_company_id, p_table, p_schema_name)]::TEXT[]);
   p_insert_queries := array_cat(p_insert_queries::TEXT[][], query::TEXT[][])::TEXT;
 
-  -- Store the sharded records into a separate table
-  IF sharding.table_exists(format('sharded.%1$I', p_table)) THEN
-    query := regexp_replace(format('INSERT INTO sharded.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ') RETURNING -1', p_schema_name, p_table, p_company_id), '\s+', ' ', 'gn');
-  ELSE
-    query := regexp_replace(format('CREATE TABLE sharded.%2$I AS SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause, p_schema_name, p_table, p_company_id || ' RETURNING -1'), '\s+', ' ', 'gn');
-  END IF;
-
-  query := format(
-    $${{ sharded.%1$I, "%2$s" }}$$,
-    p_table,
-    query
-  );
-
-  p_insert_queries := array_cat(p_insert_queries::TEXT[][], query::TEXT[][])::TEXT;
-
   IF p_generate_delete_data_queries THEN
+    -- Store the sharded records into a separate table
+    IF sharding.table_exists(format('sharded.%1$I', p_table)) THEN
+      query := regexp_replace(format('INSERT INTO sharded.%2$I (SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause || ') RETURNING -1', p_schema_name, p_table, p_company_id), '\s+', ' ', 'gn');
+    ELSE
+      query := regexp_replace(format('CREATE TABLE sharded.%2$I AS SELECT * FROM ONLY public.%2$I WHERE ' || p_where_clause, p_schema_name, p_table, p_company_id || ' RETURNING -1'), '\s+', ' ', 'gn');
+    END IF;
+
+    query := format(
+      $${{ sharded.%1$I, "%2$s" }}$$,
+      p_table,
+      query
+    );
+
+    p_insert_queries := array_cat(p_insert_queries::TEXT[][], query::TEXT[][])::TEXT;
+
     -- And build the delete sharded records from the original table query (only, not from new inherited), to return from the function
 
     -- Execute the query outputting the affected record count

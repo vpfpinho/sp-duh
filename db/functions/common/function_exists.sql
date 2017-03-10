@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS common.function_exists(TEXT);
+-- -- DROP FUNCTION IF EXISTS common.function_exists(TEXT);
 
 CREATE OR REPLACE FUNCTION common.function_exists (p_function_name TEXT)
 RETURNS BOOLEAN AS $BODY$

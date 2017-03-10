@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS sharding.check_record_existence(TEXT, JSONB);
+-- DROP FUNCTION IF EXISTS sharding.check_record_existence(TEXT, JSONB);
 
 CREATE OR REPLACE FUNCTION sharding.check_record_existence(
   IN p_table_name TEXT,
