@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS sharding.get_views_info(TEXT, TEXT);
-
 CREATE OR REPLACE FUNCTION sharding.get_views_info(
   schema_name             TEXT DEFAULT 'public',
   prefix                  TEXT DEFAULT ''
@@ -8,7 +7,8 @@ RETURNS TABLE (
   object_name             TEXT,
   qualified_object_name   TEXT,
   independent             BOOLEAN,
-  definition              TEXT
+  definition              TEXT,
+  triggers                JSONB
 ) AS $BODY$
 DECLARE
   all_objects_data        JSONB;
@@ -38,16 +38,38 @@ BEGIN
   INTO all_objects_data;
 
   RETURN QUERY EXECUTE FORMAT('
+
+    WITH view_triggers AS (
+      SELECT
+        format(''%%1$I.%%2$I'', v.schemaname, v.viewname) AS qualified_object_name,
+        (v.schemaname || ''.'' || v.viewname)::regclass::oid AS view_oid,
+        json_agg(json_build_object(
+          ''name'', t.tgname,
+          ''definition'', pg_catalog.pg_get_triggerdef(t.oid, true)
+        )::JSONB)::JSONB AS triggers
+      FROM pg_catalog.pg_trigger t
+        LEFT JOIN pg_catalog.pg_views v ON t.tgrelid = (v.schemaname || ''.'' || v.viewname)::regclass::oid
+      WHERE v.schemaname = %1$L
+        AND v.viewname ILIKE ''%2$s%%''
+        AND (NOT t.tgisinternal OR (t.tgisinternal AND t.tgenabled = ''D''))
+        AND t.tgname != ''trg_prevent_insert_or_update_on_sharded_companies'' -- Do not copy the prevent trigger for sharded companies
+        -- AND t.tgname !~* ''^trg_vfk(?:i|p)?'' -- Do not copy the virtual foreign key triggers
+      GROUP BY v.schemaname, v.viewname
+    )
+
     SELECT
       v.viewname::TEXT AS object_name,
       format(''%%1$I.%%2$I'', v.schemaname, v.viewname) AS qualified_object_name,
       CASE WHEN NOT %3$L ? v.viewname THEN true ELSE false END AS independent,
-      pg_catalog.pg_get_viewdef(c.oid) AS definition
+      pg_catalog.pg_get_viewdef(c.oid) AS definition,
+      trg.triggers
     FROM pg_catalog.pg_class c
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || ''.'' || v.viewname)::regclass::oid
+      LEFT JOIN view_triggers trg ON c.oid = trg.view_oid
     WHERE n.nspname = %1$L
       AND v.viewname ILIKE ''%2$s%%''
+
   ', schema_name, prefix, all_objects_data);
 
 END;

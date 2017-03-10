@@ -8,14 +8,18 @@ CREATE OR REPLACE FUNCTION transfer.create_shard_views(
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
-  template_schema_name  TEXT;
-  schema_name           TEXT;
-  object_data           TEXT;
-  object_name           TEXT;
-  new_object_name       TEXT;
-  query                 TEXT;
-  i                     INTEGER;
-  excluded_prefix       TEXT;
+  template_schema_name    TEXT;
+  schema_name             TEXT;
+  qualified_object_name   TEXT;
+  object_name             TEXT;
+  object_data             JSON;
+  definition              TEXT;
+  new_object_name         TEXT;
+  query                   TEXT;
+  i                       INTEGER;
+  excluded_prefix         TEXT;
+  all_objects_data        JSONB;
+  json_object             JSON;
 BEGIN
 
   template_schema_name := template_schema_names[1];
@@ -26,43 +30,76 @@ BEGIN
   ---------------------
 
   -- Get the necessary data to create the new views
+
   query := FORMAT('
-    SELECT
-      i.object_name,
-      i.definition
-    FROM sharding.get_views_info(''%1$s'', ''%2$s'') i
-    WHERE 1 = 1
+    WITH views AS (
+      SELECT *
+      FROM sharding.get_views_info(''%1$s'', ''%2$s'') i
+      WHERE 1 = 1
   ', template_schema_name, template_prefix);
   FOREACH excluded_prefix IN ARRAY excluded_prefixes
   LOOP
-    query := query || ' AND object_name NOT ILIKE ''' || excluded_prefix || '%''';
+    query := query || ' AND i.object_name NOT ILIKE ''' || excluded_prefix || '%''';
   END LOOP;
   query := query || '
-    ORDER BY
-      i.independent DESC
+      ORDER BY
+        i.independent DESC
+    )
+
+    SELECT
+      json_object_agg(i.qualified_object_name,
+        json_build_object(
+          ''object_name'', i.object_name,
+          ''definition'', i.definition,
+          ''triggers'', i.triggers
+        )
+      )::JSONB
+    FROM views i
   ';
 
-  FOR object_name, object_data IN EXECUTE query
-  LOOP
+  EXECUTE query INTO all_objects_data;
 
+  FOR qualified_object_name, object_data IN SELECT * FROM jsonb_each(all_objects_data) LOOP
+
+    -- Create view
+
+    object_name := object_data->>'object_name';
     new_object_name := prefix || substring(object_name FROM length(template_prefix) + 1);
     RAISE DEBUG '-- [VIEWS] VIEW: % (-> %)', object_name, new_object_name;
 
+    definition := object_data->>'definition';
+
     FOR i IN 1..cardinality(template_schema_names)
     LOOP
-      object_data := regexp_replace(object_data, template_schema_names[i], schema_names[i], 'g');
+      definition := regexp_replace(definition, template_schema_names[i], schema_names[i], 'g');
     END LOOP;
     IF template_prefix <> '' THEN
-      object_data := regexp_replace(object_data, template_prefix, prefix, 'g');
+      definition := regexp_replace(definition, template_prefix, prefix, 'g');
     END IF;
 
     query := format('CREATE VIEW %1$s.%2$I AS %3$s;',
       schema_name,
       new_object_name,
-      object_data
+      definition
     );
     -- RAISE DEBUG '%', query;
     EXECUTE query;
+
+    -- Create view triggers
+
+    IF (object_data->>'triggers') IS NOT NULL THEN
+      RAISE DEBUG '-- [TRIGGERS] VIEW: %', object_name;
+      FOR json_object IN SELECT * FROM json_array_elements(object_data->'triggers') LOOP
+        query := regexp_replace(
+          json_object->>'definition',
+          ' ON (?:' || template_schema_name || '\.' || template_prefix || ')?',
+          format(' ON %1$s.%2$s', schema_name, prefix)
+        );
+        -- RAISE DEBUG '%', query;
+        EXECUTE query;
+      END LOOP;
+    END IF;
+
   END LOOP;
 
   RETURN TRUE;
