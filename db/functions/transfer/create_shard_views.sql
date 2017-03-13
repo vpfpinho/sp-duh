@@ -79,6 +79,18 @@ BEGIN
           ' ON (?:' || template_schema_name || '\.' || template_prefix || ')?',
           format(' ON %1$s.%2$s', schema_name, prefix)
         );
+        query := regexp_replace(
+          query,
+          template_schema_name,
+          schema_name
+        );
+        IF template_prefix <> '' THEN
+          query := regexp_replace(
+            query,
+            template_prefix,
+            prefix
+          );
+        END IF;
         RAISE DEBUG '%', query;
         EXECUTE query;
       END LOOP;
