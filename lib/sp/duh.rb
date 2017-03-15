@@ -21,17 +21,13 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'adapters', 'p
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'model', 'base'))
 
-# Sharding library classes
-
-require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'exceptions'))
-# Sharder classes
-require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'sharded_namespace'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'sharder'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'sharding', 'schema_sharder'))
-
 # Migrations library classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations', 'migrator'))
+
+# Backup and restore (transfer) library classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'backup'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'restore'))
 
 # SP helper lib
 require 'sp-excel-loader'
@@ -50,7 +46,7 @@ module SP
       converter = ::Sp::Excel::Loader::Jrxml::ExcelToJrxml.new("config/#{args[:name]}.xlsx", nil, true, true, true)
       File.rename("#{jrxml_base}.jrxml", "./tmp/#{jrxml_base}.jrxml")
 
-      return unless args.has_key?(:data) 
+      return unless args.has_key?(:data)
 
       control = [{
           :locale           => 'pt-PT',
