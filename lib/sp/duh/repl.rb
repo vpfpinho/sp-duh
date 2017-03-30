@@ -85,6 +85,12 @@ module SP
          byebug
       end
 
+      desc 'pid                   -- get pg backend pid'
+      def pid
+        pid = @pg_conn.exec("SELECT pg_backend_pid() AS pid")[0]["pid"]
+        puts "Backend PID: #{pid}"
+      end
+
       #desc 'reload_jsonapi        -- configure JSON API'
       # @TODO check helpers to reload json and modules with JSM and TD
       #def reload_jsonapi
