@@ -24,7 +24,7 @@ class ChangeGetTablespaceNameToIncludeUserSchemas < ActiveRecord::Migration
 
         RETURN _tablespace_name;
       END;
-      $BODY$ LANGUAGE 'plpgsql' IMMUTABLE STRICT;
+      $BODY$ LANGUAGE 'plpgsql' STABLE STRICT;
     ]
   end
 
