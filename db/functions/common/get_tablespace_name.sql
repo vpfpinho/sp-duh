@@ -1,4 +1,3 @@
-
 DROP FUNCTION IF EXISTS common.get_tablespace_name(TEXT);
 
 CREATE OR REPLACE FUNCTION common.get_tablespace_name(
@@ -22,4 +21,4 @@ BEGIN
 
   RETURN _tablespace_name;
 END;
-$BODY$ LANGUAGE 'plpgsql' IMMUTABLE STRICT;
+$BODY$ LANGUAGE 'plpgsql' STABLE STRICT;
