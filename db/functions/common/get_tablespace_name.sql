@@ -7,8 +7,12 @@ RETURNS TEXT AS $BODY$
 DECLARE
   _tablespace_name TEXT;
 BEGIN
-  SELECT regexp_replace(a_schema_name, '^pt\d{6}(\d{3}).*', 'tablespace_\1') AS tablespacename
-    INTO _tablespace_name;
+
+  IF left(a_schema_name,11) = 'pt999999990' THEN
+    _tablespace_name := right(regexp_replace(a_schema_name, '^pt\d{6}(\d{3}).*?(\d{1,3})$', '\1\2'),3);
+  ELSE
+    _tablespace_name := regexp_replace(a_schema_name, '^pt\d{6}(\d{3}).*', 'tablespace_\1');
+  END IF;
 
   RETURN _tablespace_name;
 END;
