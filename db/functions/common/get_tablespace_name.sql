@@ -12,8 +12,8 @@ BEGIN
     -- last 3 digits from user id, left padded with zeroes
     _tablespace_name := 'tablespace_' || lpad( split_part(a_schema_name,'_',2), 3, '0');
   ELSIF left(a_schema_name,11) = 'pt999999990' THEN
-    -- last 3 digits from id, padded with up to 3 digits from tax_registration_number if needed
-    _tablespace_name := 'tablespace_' || right( regexp_replace(a_schema_name,'^pt\d{6}(\d{3}).*?(\d*)$','\1\2'), 3);
+    -- last 3 digits from id, left padded with zeroes
+    _tablespace_name := 'tablespace_' || lpad( regexp_replace(a_schema_name,'^pt\d{9}.*?(\d{1,3})$','\1'), 3, '0');
   ELSE
     -- last 3 digits from tax_registration_number
     _tablespace_name := 'tablespace_' || substr(a_schema_name,9,3);
