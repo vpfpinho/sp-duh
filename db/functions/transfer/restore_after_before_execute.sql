@@ -21,6 +21,7 @@ DECLARE
   prefix                      text;
   excluded_prefixes           text[];
   has_fiscal_years            boolean;
+  company_accountant_id       bigint;
 BEGIN
 
   -- Validate the company's info
@@ -113,6 +114,16 @@ BEGIN
     ----------------------------------------------
     -- Restore the source FOREIGN RECORDS first --
     ----------------------------------------------
+
+    -- Who is the company accountant?
+    EXECUTE FORMAT('SELECT c.accountant_id FROM %1$s.public_companies c WHERE c.id = %2$L', meta_schema, company_id)
+    INTO STRICT company_accountant_id;
+    -- Does the company accountant already exist in the destination database?
+    IF EXISTS (SELECT u.id FROM public.users u WHERE u.id = company_accountant_id) THEN
+      -- The company accountant already exists in the destination database. Do not try to insert it again.
+      EXECUTE FORMAT('DELETE FROM %1$s.public_users u WHERE u.id = %2$L', meta_schema, company_accountant_id);
+      RAISE DEBUG 'NOT RESTORING accountant %', company_accountant_id;
+    END IF;
 
     FOR foreign_table IN SELECT * FROM transfer.get_foreign_tables_to_transfer() LOOP
 
