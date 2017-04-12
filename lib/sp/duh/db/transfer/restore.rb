@@ -38,10 +38,11 @@ module SP
               SP::Duh::Db::Transfer.log_with_time "STARTED restoring company #{@company_id} from dump #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Preparing restore..."
               @started_at = Time.now
-              @schemas = @connection.exec %Q[
+              meta_schema = @connection.exec %Q[
                 SELECT * FROM transfer.restore_before_before_execute(#{@company_id});
               ]
-              command = "pg_restore -Fc -n _meta_ --data-only -h #{@connection.host} -p #{@connection.port} -U #{@connection.user} -d #{@connection.db} < #{@dump_file}"
+              meta_schema = meta_schema.first.values.first
+              command = "pg_restore -Fc -n #{meta_schema} --data-only -h #{@connection.host} -p #{@connection.port} -U #{@connection.user} -d #{@connection.db} < #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Restoring the backup metadata..."
               SP::Duh::Db::Transfer.log_with_time command
               result = %x[ #{command} ]
