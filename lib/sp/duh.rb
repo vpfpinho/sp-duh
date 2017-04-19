@@ -29,6 +29,9 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations', 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'backup'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'restore'))
 
+# API documentationlibrary classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'doc', 'generator'))
+
 # SP helper lib
 require 'sp-excel-loader'
 
