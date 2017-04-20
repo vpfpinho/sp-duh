@@ -78,34 +78,27 @@ module SP
             end
 
             def get_api_method_params(resource, method, single = true)
+              a = get_resource_data(resource, :id)
+              id_param = (a.nil? ? -1 : a.to_i)
+              params = []
               case
-                when method.to_sym.in?([ :patch, :delete ]) || (method.to_sym == :get && single)
-                  a = get_resource_data(resource, :id)
-                  if !a.nil?
-                    a = get_attribute(resource, a.to_i)
-                    if !a.nil?
+                when method.to_sym.in?([ :post, :patch, :delete ]) || (method.to_sym == :get && single)
+                  if resource[:attributes]
+                    resource[:attributes].each_with_index do |a, i|
+                      break if a[:readonly]
+                      next if i == id_param && method.to_sym == :post
                       data = "@apiParam "
                       if !a[:catalog].nil?
                         data += "{#{get_type(a[:catalog])}} "
                       end
-                      description = a[:description]
-                      description = [ a[:name].titlecase ] if description.blank?
-                      data += "#{a[:name]} #{a[:description].first}"
-                      data = [ data ]
-                      description.each_with_index do |d, i|
-                        next if i == 0
-                        data << d
-                      end
-                      data
-                    else
-                      [ nil ]
+                      data += "#{a[:name]} #{(a[:description] || []).join('. ')}"
+                      params << data
+                      break if i == id_param && method.to_sym.in?([ :get, :delete ])
                     end
-                  else
-                    [ nil ]
                   end
-                else
-                  [ nil ]
               end
+              params = params + get_api_method_param_example(resource, method) if method.to_sym.in?([ :post, :patch ])
+              params
             end
 
             def get_attribute_list(resource, single = true)
@@ -123,8 +116,14 @@ module SP
               end
             end
 
+            def get_api_method_param_example(resource, method)
+              data = [ "@apiParamExample {json} Request body example", "" ]
+              data = data + get_api_method_json(resource, method)
+              data
+            end
+
             def get_api_method_success_example(resource, method, single = true)
-              data = [ "@apiSuccessExample {json} Success response", "HTTP/1.1 200 OK", "" ]
+              data = [ "@apiSuccessExample {json} Success response example", "HTTP/1.1 200 OK", "" ]
               case
                 when method.to_sym.in?([ :get, :patch, :post ])
                   data = data + get_api_method_json(resource, :get, single)
@@ -150,7 +149,7 @@ module SP
               case
                 when method.to_sym.in?([ :post, :patch ]) || (method.to_sym == :get && single)
                   json << '  "data": {'
-                  json = json + get_resource_json(resource, method.to_sym != :post)
+                  json = json + get_resource_json(resource, method.to_sym != :post, !method.to_sym.in?([ :post, :patch ]))
                   json << '  }'
                 when method.to_sym == :get && !single
                   json << '  "data": [{'
@@ -161,7 +160,7 @@ module SP
               json
             end
 
-            def get_resource_json(resource, include_id = true)
+            def get_resource_json(resource, include_id = true, include_readonly = true)
               json = []
               json << '    "type": "' + get_resource_name(resource) + '",'
               id_index = get_resource_data(resource, :id).to_i
@@ -169,6 +168,7 @@ module SP
               json << '    "attributes": {'
               resource[:attributes].each_with_index do |a, i|
                 next if i == id_index
+                break if a[:readonly] && !include_readonly
                 json << '      "' + a[:name].to_s + '": ' + get_default_value_for_attribute(resource, i) + (i == resource[:attributes].length - 1 ? '' : ',')
               end
               json << '    }'

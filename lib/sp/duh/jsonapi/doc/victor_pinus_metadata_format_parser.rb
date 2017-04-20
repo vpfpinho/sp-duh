@@ -157,16 +157,22 @@ module SP
                   metadata[:attributes] = []
                 end
 
+                readonly = false
                 a = get_attribute(line)
                 if !a.first.nil?
                   metadata[:resource][:id] = metadata[:attributes].length if a.first.strip.to_sym == :id
                   # Get the attribute metadata
                   description, example = get_metadata_for(lines, i, a)
+                  if description && (description.first == '[readonly]')
+                    readonly = true
+                    description.delete_at(0)
+                  end
                   metadata[:attributes] << {
                     name: a.first.strip,
                     catalog: @schema_helper.get_attribute(a.first),
                     description: description,
-                    example: example
+                    example: example,
+                    readonly: readonly
                   }
                 end
 
