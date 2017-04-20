@@ -12,13 +12,16 @@ module SP
             @pg_connection = pg_connection
           end
 
-          def generate(resource_publisher, doc_folder_path = File.join(Dir.pwd, 'apidoc'))
+          def generate(resource_publisher, version, doc_folder_path = File.join(Dir.pwd, 'apidoc'))
             # Load the JSONAPI resources from the given publishers
             @parser = SP::Duh::JSONAPI::Doc::VictorPinusMetadataFormatParser.new(@pg_connection)
             @parser.parse(resource_publisher)
             # Generate the resources documentation
             @generator = SP::Duh::JSONAPI::Doc::ApidocDocumentationFormatGenerator.new
-            @generator.generate(@parser, doc_folder_path)
+            @generator.generate(@parser, version, doc_folder_path)
+            # Regenerate the documentation site
+            _log "Generating the documentation site in #{doc_folder_path}", "JSONAPI::Doc::Generator"
+            `(cd #{doc_folder_path} && apidoc)`
           end
 
         end

@@ -90,7 +90,8 @@ module SP
 
             def parse_resource(resource)
               resource_name = resource.keys[0].to_s
-              resource_group = resource.values[0][:group]
+              group = /^(?<group>\w+?)_/.match(resource_name)
+              resource_group = (group ? group[:group].capitalize : resource.values[0][:group])
               resource_file = resource.values[0][:file]
               _log "   Processing resource #{resource_name} in file #{resource_file}", "JSONAPI::Doc::Parser"
               metadata = parse_file(resource_name, resource_file)
@@ -120,7 +121,7 @@ module SP
                 break if metadata.has_key?(:resource) && !r.first.nil? && r.first.strip != resource
                 if !r.first.nil? && !metadata.has_key?(:resource)
                   # Get the resource metadata:
-                  m = get_metadata_for(lines, i, r)
+                  m, example = get_metadata_for(lines, i, r)
                   scope = :private
                   if m && (m.first == '[public]' || m.first == '[private]')
                     scope = :public if m.first == '[public]'
@@ -160,10 +161,12 @@ module SP
                 if !a.first.nil?
                   metadata[:resource][:id] = metadata[:attributes].length if a.first.strip.to_sym == :id
                   # Get the attribute metadata
+                  description, example = get_metadata_for(lines, i, a)
                   metadata[:attributes] << {
                     name: a.first.strip,
                     catalog: @schema_helper.get_attribute(a.first),
-                    description: get_metadata_for(lines, i, a)
+                    description: description,
+                    example: example
                   }
                 end
 
@@ -199,9 +202,10 @@ module SP
             end
             def get_metadata(line)
               attribute = get_attribute(line)
-              metadata = /^# (?<meta>.+?)(\s*\((ex|Ex|default|Default):\s*(?<eg>.+?)\)\s*)*$/.match(line.strip)
+              metadata = line.strip.start_with?('#') ? line.strip[1..line.strip.length-1].strip : nil
+              example = /\((ex|Ex|default|Default):\s*(?<eg>.+?)\)/.match(line.strip)
               if metadata && attribute.first.nil?
-                [ metadata[:meta], metadata[:eg] ]
+                [ metadata, example ? example[:eg] : nil ]
               else
                 [ nil, nil ]
               end
@@ -218,11 +222,13 @@ module SP
               return if object.first.nil?
               name = object.first.strip
               data = []
+              example = nil
               if object.last.nil?
                 each_backwards(enumerable, index) do |line|
                   m = get_metadata(line)
                   if m.first
                     data << m.first
+                    example = m.last if m.last
                   else
                     break
                   end
@@ -238,7 +244,7 @@ module SP
                 data = nil
                 _log "   > #{name} has no metadata", "JSONAPI::Doc::Parser"
               end
-              data
+              [ data, example ]
             end
 
             def each_backwards(enumerable, index, &block)
