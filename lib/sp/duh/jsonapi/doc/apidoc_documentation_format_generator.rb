@@ -7,6 +7,12 @@ module SP
 
           def generate(resource_parser, version, doc_folder_path)
             @version = version
+            # First create an index of all resources (for relationships linking)
+            @resources = {}
+            resource_parser.each do |resource|
+              next if get_resource_data(resource, :scope) != :public
+              @resources[get_resource_name(resource)] = get_resource_link(resource)
+            end
             _log "Generating Apidoc documentation for version #{version} in folder #{doc_folder_path}", "JSONAPI::Doc::Generator"
             resource_parser.each do |resource|
               next if get_resource_data(resource, :scope) != :public
@@ -25,6 +31,13 @@ module SP
                 wrap_in_comments(f) { append_lines(f, get_delete_documentation(resource)) }
                 wrap_in_comments(f) { append_lines(f, get_get_documentation(resource, false)) }
               end
+            end
+
+            def get_resource_link(resource)
+              group = get_resource_data(resource, :group).gsub(' ', '_')
+              get_action_name = "#{('Get_' + get_resource_name(resource)).camelcase}"
+              link = '#api-' + "#{group}-#{get_action_name}"
+              link
             end
 
             def wrap_in_comments(f) ; write_header(f) ; yield ; write_footer(f) ; end
@@ -77,6 +90,8 @@ module SP
               data
             end
 
+#api-Commercial_Sales_Documents-PostCommercialSalesDocuments
+
             def get_api_method_params(resource, method, single = true)
               a = get_resource_data(resource, :id)
               id_param = (a.nil? ? -1 : a.to_i)
@@ -85,13 +100,23 @@ module SP
                 when method.to_sym.in?([ :post, :patch, :delete ]) || (method.to_sym == :get && single)
                   if resource[:attributes]
                     resource[:attributes].each_with_index do |a, i|
-                      break if a[:readonly]
+                      next if a[:readonly] == true
                       next if i == id_param && method.to_sym == :post
                       data = "@apiParam "
+                      type = nil
                       if !a[:catalog].nil?
-                        data += "{#{get_type(a[:catalog])}} "
+                        type = get_type(a[:catalog])
+                        data += "{#{type}} "
                       end
-                      data += "#{a[:name]} #{(a[:description] || []).join('. ')}"
+                      description = (a[:description] || []).join('. ')
+                      if a[:association]
+                        ap type
+                        ap @resources
+                        if type && @resources[type.gsub('[]','')]
+                          description = '<a href="' + @resources[type.gsub('[]','')] + '">' + description + '</a>'
+                        end
+                      end
+                      data += "#{a[:name]} #{description}"
                       params << data
                       break if i == id_param && method.to_sym.in?([ :get, :delete ])
                     end
@@ -160,6 +185,11 @@ module SP
               json
             end
 
+            # relationships: {
+            #   accountant: { data: { type: "accountants", id: "#{current_company.accountant.id}" } },
+            #   company:    { data: { type: "companies",   id: "#{current_company.id}" } }
+            # }
+
             def get_resource_json(resource, include_id = true, include_readonly = true)
               json = []
               json << '    "type": "' + get_resource_name(resource) + '",'
@@ -168,10 +198,40 @@ module SP
               json << '    "attributes": {'
               resource[:attributes].each_with_index do |a, i|
                 next if i == id_index
-                break if a[:readonly] && !include_readonly
-                json << '      "' + a[:name].to_s + '": ' + get_default_value_for_attribute(resource, i) + (i == resource[:attributes].length - 1 ? '' : ',')
+                next if a[:readonly] == true && !include_readonly
+                next if a[:association]
+                json << '      "' + a[:name].to_s + '": ' + get_default_value_for_attribute(resource, i) + ','
               end
+              delete_comma(json)
               json << '    }'
+              has_associations = false
+              resource[:attributes].each_with_index do |a, i|
+                next if !a[:association]
+                next if a[:readonly] == true && !include_readonly
+                if !has_associations
+                  add_comma(json)
+                  json << '    "relationships": {'
+                  has_associations = true
+                end
+                json = json + get_association_json(resource, i, a)
+              end
+              if has_associations
+                delete_comma(json)
+                json << '    }'
+              end
+              json
+            end
+
+            def add_comma(lines) ; lines[lines.length-1] = lines[lines.length-1] + ',' ; end
+            def delete_comma(lines) ; lines[lines.length-1] = lines[lines.length-1][0..lines[lines.length-1].length-2] ; end
+
+            def get_association_json(resource, i, attribute)
+              return [] if attribute[:association] == :'to-many'
+              json = []
+              json << '      "data": {'
+              json << '        "type": "' + get_type(attribute[:catalog]) + '",'
+              json << '        "id": ' + get_default_value_for_attribute(resource, i)
+              json << '      },'
               json
             end
 
@@ -180,7 +240,7 @@ module SP
               if a.nil?
                 'null'
               else
-                if a[:name].to_sym == :id
+                if a[:name].to_sym == :id || a[:association]
                   return "1"
                 else
                   default = a[:example]
@@ -188,6 +248,8 @@ module SP
                     default = default.gsub('"','').gsub("'", '')
                     type = get_type(a[:catalog])
                     case type
+                    when 'boolean'
+                      default = default
                     when 'integer', 'bigint'
                       default = default
                     when 'numeric', 'decimal', 'float'
