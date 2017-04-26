@@ -23,12 +23,13 @@ module SP
           private
 
             def generate_documentation(resource, folder_path)
+              readonly = (get_resource_data(resource, :readonly) == true)
               _log "   Generating documentation for resource #{resource}", "JSONAPI::Doc::Generator"
               File.open(File.join(folder_path, "#{get_resource_name(resource)}.js"), File::CREAT | File::TRUNC | File::RDWR) do |f|
-                wrap_in_comments(f) { append_lines(f, get_post_documentation(resource)) }
+                wrap_in_comments(f) { append_lines(f, get_post_documentation(resource)) } if !readonly
                 wrap_in_comments(f) { append_lines(f, get_get_documentation(resource)) }
-                wrap_in_comments(f) { append_lines(f, get_patch_documentation(resource)) }
-                wrap_in_comments(f) { append_lines(f, get_delete_documentation(resource)) }
+                wrap_in_comments(f) { append_lines(f, get_patch_documentation(resource)) } if !readonly
+                wrap_in_comments(f) { append_lines(f, get_delete_documentation(resource)) } if !readonly
                 wrap_in_comments(f) { append_lines(f, get_get_documentation(resource, false)) }
               end
             end
@@ -90,7 +91,22 @@ module SP
               data
             end
 
-#api-Commercial_Sales_Documents-PostCommercialSalesDocuments
+            def get_attribute_type_name_and_description(a)
+              data = ""
+              type = nil
+              if !a[:catalog].nil?
+                type = get_type(a[:catalog])
+                data += "{#{type}} "
+              end
+              description = (a[:description] || []).join('. ')
+              if a[:association]
+                if type && @resources[type.gsub('[]','')]
+                  description = '<a href="' + @resources[type.gsub('[]','')] + '">' + description + '</a>'
+                end
+              end
+              data += "#{a[:name]} #{description}"
+              data
+            end
 
             def get_api_method_params(resource, method, single = true)
               a = get_resource_data(resource, :id)
@@ -103,21 +119,7 @@ module SP
                       next if a[:readonly] == true
                       next if i == id_param && method.to_sym == :post
                       data = "@apiParam "
-                      type = nil
-                      if !a[:catalog].nil?
-                        type = get_type(a[:catalog])
-                        data += "{#{type}} "
-                      end
-                      description = (a[:description] || []).join('. ')
-                      if a[:association]
-                        ap type
-                        ap @resources
-                        if type && @resources[type.gsub('[]','')]
-                          description = '<a href="' + @resources[type.gsub('[]','')] + '">' + description + '</a>'
-                        end
-                      end
-                      data += "#{a[:name]} #{description}"
-                      params << data
+                      params << "@apiParam " + get_attribute_type_name_and_description(a)
                       break if i == id_param && method.to_sym.in?([ :get, :delete ])
                     end
                   end
@@ -129,12 +131,7 @@ module SP
             def get_attribute_list(resource, single = true)
               if resource[:attributes]
                 resource[:attributes].map do |a|
-                  data = "@apiSuccess "
-                  if !a[:catalog].nil?
-                    data += "{#{get_type(a[:catalog])}} "
-                  end
-                  data += "#{a[:name]} #{(a[:description] || []).join('. ')}"
-                  data
+                  "@apiSuccess " + get_attribute_type_name_and_description(a)
                 end
               else
                 []
@@ -184,11 +181,6 @@ module SP
               json << '}'
               json
             end
-
-            # relationships: {
-            #   accountant: { data: { type: "accountants", id: "#{current_company.accountant.id}" } },
-            #   company:    { data: { type: "companies",   id: "#{current_company.id}" } }
-            # }
 
             def get_resource_json(resource, include_id = true, include_readonly = true)
               json = []

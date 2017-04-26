@@ -118,8 +118,7 @@ module SP
               metadata = {}
               indent = nil
 
-              # yaml = YAML.load(resource_file)         # YAML version
-              lines = File.readlines(resource_file)   # Full-text version
+              lines = File.readlines(resource_file)
 
               table_name = function_name = data_schema = use_schema = nil
               lines.each_with_index do |line, i|
@@ -150,6 +149,8 @@ module SP
                     when t.start_with?('group')
                       v = t.split('=')
                       metadata[:resource][:group] = v.last.strip
+                    when t == 'readonly'
+                      metadata[:resource][:readonly] = true
                     end
                   end
                 end
@@ -214,6 +215,11 @@ module SP
                         readonly = false
                         next
                       end
+                    else
+                      column = get_value_of('pg-column', line)
+                      metadata[:attributes].last.merge!({
+                        catalog: @schema_helper.get_attribute(column)
+                      }) if column
                     end
                   end
 
