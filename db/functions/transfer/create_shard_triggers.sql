@@ -43,6 +43,11 @@ BEGIN
           ' ON (?:' || template_schema_name || '\.' || template_prefix || ')?',
           format(' ON %1$s.%2$s', schema_name, prefix)
         );
+        query := replace(
+          query,
+          template_schema_name || '.' || template_prefix,
+          format('%1$s.%2$s', schema_name, prefix)
+        );
         EXECUTE query;
       END LOOP;
     END IF;
