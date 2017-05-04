@@ -9,11 +9,15 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
     migrate_user_templates do |schema, table_prefix, ut|
       # Code to run on user templates' schemas
 
+      # keep low cpu usage on DB
+      sleep 0.200
     end
 
     migrate_fiscal_years do |schema, table_prefix, fy|
       # Code to run on fiscal years' schemas
 
+      # keep low cpu usage on DB
+      sleep 0.200
     end
   end
 
