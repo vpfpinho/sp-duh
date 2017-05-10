@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.create_shard_constraints(BIGINT, TEXT, TEXT, TEXT, TEXT, JSONB);
+DROP FUNCTION IF EXISTS transfer.create_shard_constraints(BIGINT, BIGINT, TEXT, TEXT, TEXT, TEXT, JSONB);
 CREATE OR REPLACE FUNCTION transfer.create_shard_constraints(
   company_id              BIGINT,
+  template_company_id     BIGINT,
   template_schema_name    TEXT,
   schema_name             TEXT,
   template_prefix         TEXT DEFAULT '',
@@ -9,7 +10,6 @@ CREATE OR REPLACE FUNCTION transfer.create_shard_constraints(
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
-  template_company_id     integer;
   object_data             JSON;
   qualified_object_name   TEXT;
   object_name             TEXT;
@@ -18,8 +18,6 @@ DECLARE
   name                    TEXT;
   aux                     TEXT;
 BEGIN
-
-  template_company_id := split_part(template_schema_name, '_c', 2)::integer;
 
   IF all_objects_data IS NULL THEN
     -- Get the necessary data to create the new constraints

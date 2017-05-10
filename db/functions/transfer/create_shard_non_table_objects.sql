@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.create_shard_non_table_objects(BIGINT, TEXT, TEXT, TEXT, TEXT, TEXT[]);
+DROP FUNCTION IF EXISTS transfer.create_shard_non_table_objects(BIGINT, BIGINT, TEXT, TEXT, TEXT, TEXT, TEXT[]);
 CREATE OR REPLACE FUNCTION transfer.create_shard_non_table_objects(
   company_id              BIGINT,
+  template_company_id     BIGINT,
   template_schema_name    TEXT,
   schema_name             TEXT,
   template_prefix         TEXT DEFAULT '',
@@ -35,7 +36,7 @@ BEGIN
   EXECUTE query INTO all_objects_data;
 
   PERFORM transfer.create_shard_indexes(template_schema_name, schema_name, template_prefix, prefix, all_objects_data);
-  PERFORM transfer.create_shard_constraints(company_id, template_schema_name, schema_name, template_prefix, prefix, all_objects_data);
+  PERFORM transfer.create_shard_constraints(company_id, template_company_id, template_schema_name, schema_name, template_prefix, prefix, all_objects_data);
   PERFORM transfer.create_shard_foreign_keys(template_schema_name, schema_name, template_prefix, prefix, all_objects_data);
   PERFORM transfer.create_shard_triggers(template_schema_name, schema_name, template_prefix, prefix, all_objects_data);
 
