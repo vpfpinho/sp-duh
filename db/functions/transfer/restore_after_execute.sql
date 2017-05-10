@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.restore_after_execute(bigint);
+DROP FUNCTION IF EXISTS transfer.restore_after_execute(bigint, bigint);
 CREATE OR REPLACE FUNCTION transfer.restore_after_execute(
-  company_id      bigint
+  company_id            bigint,
+  template_company_id   bigint
 ) RETURNS VOID AS $BODY$
 DECLARE
   meta_schema                 text;
@@ -29,7 +30,7 @@ BEGIN
     FORMAT('SELECT * FROM %1$s.info', meta_schema)
   INTO STRICT source_info;
 
-  SELECT * FROM transfer.get_restore_templates(company_id)
+  SELECT * FROM transfer.get_restore_templates(company_id, template_company_id)
   INTO main_schema_template, accounting_schema_template, fiscal_year_template;
 
   -----------------------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ BEGIN
 
   -- MAIN company schema non-table objects
   RAISE NOTICE 'Creating non-table objects in schema %', source_info.main_schema;
-  PERFORM transfer.create_shard_non_table_objects(company_id, main_schema_template, source_info.main_schema);
+  PERFORM transfer.create_shard_non_table_objects(company_id, template_company_id, main_schema_template, source_info.main_schema);
 
   -- ACCOUNTING companies schema non-table objects
   EXECUTE FORMAT('
@@ -47,14 +48,14 @@ BEGIN
   INTO STRICT excluded_prefixes;
   FOREACH accounting_schema IN ARRAY source_info.accounting_schemas LOOP
     RAISE NOTICE 'Creating (global) non-table objects in schema %', accounting_schema;
-    PERFORM transfer.create_shard_non_table_objects(company_id, accounting_schema_template, accounting_schema, '', '', excluded_prefixes);
+    PERFORM transfer.create_shard_non_table_objects(company_id, template_company_id, accounting_schema_template, accounting_schema, '', '', excluded_prefixes);
   END LOOP;
 
   -- Accounting companies FISCAL YEARS schema non-table objects
   FOR accounting_schema, prefixes IN SELECT * FROM json_each(source_info.fiscal_years) LOOP
     FOREACH prefix IN ARRAY ARRAY(SELECT trim(fy::text, '"') FROM json_array_elements(prefixes->'prefixes') fy) LOOP
       RAISE NOTICE 'Creating non-table objects in schema % with prefix %', accounting_schema, prefix;
-      PERFORM transfer.create_shard_non_table_objects(company_id, accounting_schema_template, accounting_schema, fiscal_year_template, prefix);
+      PERFORM transfer.create_shard_non_table_objects(company_id, template_company_id, accounting_schema_template, accounting_schema, fiscal_year_template, prefix);
     END LOOP;
   END LOOP;
 
