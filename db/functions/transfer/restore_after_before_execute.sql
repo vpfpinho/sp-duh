@@ -1,6 +1,7 @@
-DROP FUNCTION IF EXISTS transfer.restore_after_before_execute(bigint, boolean);
+DROP FUNCTION IF EXISTS transfer.restore_after_before_execute(bigint, bigint, boolean);
 CREATE OR REPLACE FUNCTION transfer.restore_after_before_execute(
   company_id                  bigint,
+  template_company_id         bigint,
   validate_only               boolean DEFAULT false
 ) RETURNS TABLE (
   schema_name                 text
@@ -61,7 +62,7 @@ BEGIN
 
   -- Assert that there are avaliable templates to build the company in the destination database
 
-  SELECT * FROM transfer.get_restore_templates(company_id)
+  SELECT * FROM transfer.get_restore_templates(company_id, template_company_id)
   INTO main_schema_template, accounting_schema_template, fiscal_year_template;
 
   has_fiscal_years := false;
