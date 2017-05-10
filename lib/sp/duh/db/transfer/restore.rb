@@ -39,8 +39,9 @@ module SP
               raise "Configuration file #{services_configuration_file} not found." if !File.exist?(services_configuration_file)
               services_configuration = YAML.load_file(services_configuration_file)
               raise "Invalid configuration in file #{services_configuration_file}." if services_configuration.nil?
-              template_company_id = services_configuration[:company_id]
-              raise "No template company id found in file #{services_configuration_file}." if template_company_id.nil?
+              @template_company_id = services_configuration[:company_id]
+              raise "No template company id found in file #{services_configuration_file}." if @template_company_id.nil?
+              @template_company_id = @template_company_id.to_i
               SP::Duh::Db::Transfer.log_with_time "STARTED restoring company #{@company_id} from dump #{@dump_file}"
               SP::Duh::Db::Transfer.log_with_time "Preparing restore..."
               @started_at = Time.now
@@ -59,7 +60,7 @@ module SP
                 SP::Duh::Db::Transfer.log_with_time "Processing metadata and foreign records..."
               end
               @schemas = @connection.exec %Q[
-                SELECT * FROM transfer.restore_after_before_execute(#{@company_id}, #{template_company_id.to_i}, #{skip});
+                SELECT * FROM transfer.restore_after_before_execute(#{@company_id}, #{@template_company_id}, #{skip});
               ]
               @schemas = @schemas.map { |result| result['schema_name'] }
             end
@@ -74,7 +75,7 @@ module SP
             def after_execute
               SP::Duh::Db::Transfer.log_with_time "Finishing restore..."
               @connection.exec %Q[
-                SELECT * FROM transfer.restore_after_execute(#{@company_id});
+                SELECT * FROM transfer.restore_after_execute(#{@company_id}, #{@template_company_id});
               ]
               @ended_at = Time.now
               SP::Duh::Db::Transfer.log_with_time "FINISHED restoring company #{@company_id} in #{(@ended_at - @started_at).round(2)}s"
