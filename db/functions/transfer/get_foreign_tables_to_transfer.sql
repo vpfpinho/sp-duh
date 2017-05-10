@@ -45,6 +45,7 @@ BEGIN
             )
           )
           AND t.table_name NOT LIKE ''vw_%%''
+          AND t.table_name <> ''duplicated_documents''
     ),
     all_tables AS (
       SELECT ''companies''::text AS table_name, ''company_id''::text AS column_name, ''purchases''::text AS schema_name, ''00''::text AS priority_key
