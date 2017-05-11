@@ -13,6 +13,8 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
           # Code to run on sharded companies' schemas
 
       end
+      # IF CHANGING TABLE we need to keep low cpu usage on DB
+      sleep 0.100
     end
 
   end
