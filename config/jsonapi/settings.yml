@@ -7,5 +7,7 @@ attribute-restriction: false
 empty-is-null: true
 page-size: 0
 request-schema: false
+request-sharded-schema: false
 request-table-prefix: false
 pg-order-by: "created_at"
+pg-search_path: '"$user", request-sharded-schema, public'
