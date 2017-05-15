@@ -119,7 +119,8 @@ BEGIN
       LEFT JOIN pg_catalog.pg_tables ta ON t.tgrelid = (ta.schemaname || '.' || ta.tablename)::regclass::oid
     WHERE ta.schemaname = 'public'
       AND (NOT t.tgisinternal OR (t.tgisinternal AND t.tgenabled = 'D'))
-      AND t.tgname != 'trg_prevent_insert_or_update_on_sharded_companies' -- Don't copy the prevent trigger for sharded companies
+      AND t.tgname != 'trg_prevent_insert_or_update_on_sharded_companies' -- Don't copy the prevent trigger for sharded companies (legacy trigger name)
+      AND t.tgname != 'trg_prevent_changes_on_sharded_tables_for_sharded_companies' -- Don't copy the prevent trigger for sharded companies
       AND t.tgname !~* '^trg_vfk(?:i|p)?' -- Don't copy the virtual foreign key triggers
     GROUP BY ta.schemaname, ta.tablename
   )
