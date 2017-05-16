@@ -17,6 +17,9 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       sleep 0.100
     end
 
+    # If migration add structural changes on public objects and want run migration
+    # withou a full deploy, please uncomment the next line
+    # invalidate_postgresql_redis_cache!
   end
 
   def down
@@ -34,5 +37,9 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
 
       end
     end
+
+    # If migration add structural changes on public objects and want run migration
+    # withou a full deploy, please uncomment the next line
+    # invalidate_postgresql_redis_cache!
   end
 end
