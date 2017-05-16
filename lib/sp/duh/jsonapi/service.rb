@@ -67,6 +67,9 @@ module SP
                 OUT response      text
               ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_with_status' LANGUAGE C;
 
+              CREATE OR REPLACE FUNCTION inside_jsonapi (
+              ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
+
             ]
           end
       end
