@@ -70,6 +70,21 @@ module SP
               CREATE OR REPLACE FUNCTION inside_jsonapi (
               ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
 
+              CREATE OR REPLACE FUNCTION get_jsonapi_schema (
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_schema' LANGUAGE C;
+
+              CREATE OR REPLACE FUNCTION get_jsonapi_table_prefix (
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_table_prefix' LANGUAGE C;
+
+              CREATE OR REPLACE FUNCTION get_jsonapi_sharded_schema (
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_sharded_schema' LANGUAGE C;
+
+              CREATE OR REPLACE FUNCTION get_jsonapi_user (
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_user' LANGUAGE C;
+
+              CREATE OR REPLACE FUNCTION get_jsonapi_company (
+              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_company' LANGUAGE C;
+
             ]
           end
       end
