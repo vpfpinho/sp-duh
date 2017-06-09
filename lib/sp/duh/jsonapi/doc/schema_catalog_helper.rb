@@ -38,7 +38,7 @@ module SP
                   c.use_sharded_company = true
                 LIMIT 1
               ]
-              result.as_json.first['schema_name']
+              result.to_json.first['schema_name']
             end
 
             def get_db_table_attribute_definitions(schema, table_name)
@@ -60,7 +60,7 @@ module SP
                   AND t.tablename = '#{table_name}'
               ]
               definitions = {}
-              result.as_json.each { |a| definitions.merge!({ a['attname'] => a })  }
+              result.to_json.each { |a| definitions.merge!({ a['attname'] => a })  }
               definitions
             end
 
