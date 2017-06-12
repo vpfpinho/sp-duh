@@ -164,8 +164,10 @@ module SP
                   table_name = get_value_of('pg-table', line) if table_name.nil?
                   function_name = get_value_of('pg-function', line) if function_name.nil?
                   data_schema = get_value_of('pg-schema', line) if data_schema.nil?
-                  use_schema = get_value_of('request-schema', line) if use_schema.nil?
 
+                  use_schema = get_value_of('request-schema', line) if use_schema.nil?
+                  use_schema = get_value_of('request-sharded-schema', line) if use_schema.nil?
+                                    
                   # Process resource attributes
 
                   if is_beginning_of_attribute_section?(line)
@@ -175,9 +177,10 @@ module SP
                     @schema_helper.add_setting(:schema, data_schema) if !data_schema.nil?
                     @schema_helper.add_setting(:table_name, table_name) if !table_name.nil?
                     @schema_helper.add_setting(:function_name, function_name) if !function_name.nil?
-                    @schema_helper.add_setting(:use_schema, use_schema.to_b)
+                    @schema_helper.add_setting(:use_schema, use_schema) if !use_schema.nil?
+
                     metadata[:resource][:catalog] = {
-                      sharded_schema: use_schema.to_b
+                      sharded_schema: use_schema == 'true'
                     }
                     metadata[:resource][:catalog][:schema] = data_schema if !data_schema.nil?
                     metadata[:resource][:catalog][:table_name] = table_name if !table_name.nil?

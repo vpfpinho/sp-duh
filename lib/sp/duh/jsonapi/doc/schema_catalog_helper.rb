@@ -15,7 +15,7 @@ module SP
           def add_setting(setting, value) ; @settings[setting.to_sym] = value ; end
           def get_settings
             @settings.merge({
-              schema: (@settings[:use_schema].to_b ? @default_schema : 'public')
+              schema: (@settings[:use_schema] ? @default_schema : 'public')
             })
           end
 
