@@ -9,9 +9,11 @@ end
 
 desc 'Reload jsonapi'
 task :config_jsonapi => :pg_connect do
-  $jsonapi_service = SP::Duh::JSONAPI::Service.new($db, 'https://c4.cloudware.pt')
+  $jsonapi_service = SP::Duh::JSONAPI::Service.new($db, $jsonapi_url)
   $jsonapi_service.setup()
-  $jsonapi_service.configuration.add_publisher(C4)
+  $jsonapi_publishers.each do |publisher|
+  	$jsonapi_service.configuration.add_publisher(publisher)
+  end
   $jsonapi_service.configuration.reload!
 end
 

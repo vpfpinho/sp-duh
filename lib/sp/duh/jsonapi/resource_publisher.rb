@@ -8,6 +8,7 @@
 module SP
   module Duh
     module JSONAPI
+
       module ResourcePublisher
         extend ::ActiveSupport::Concern
 
