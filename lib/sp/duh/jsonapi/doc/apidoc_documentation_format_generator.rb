@@ -218,12 +218,24 @@ module SP
             def delete_comma(lines) ; lines[lines.length-1] = lines[lines.length-1][0..lines[lines.length-1].length-2] ; end
 
             def get_association_json(resource, i, attribute)
-              return [] if attribute[:association] == :'to-many'
               json = []
-              json << '      "data": {'
-              json << '        "type": "' + get_type(attribute[:catalog]) + '",'
-              json << '        "id": ' + get_default_value_for_attribute(resource, i)
-              json << '      },'
+              if attribute[:association] == :'to-many'
+                json << '      "data": ['
+                json << '        {'
+                json << '          "type": "' + get_type(attribute[:catalog]).sub('[]', '') + '",'
+                json << '          "id": ' + get_default_value_for_attribute(resource, i)
+                json << '        },'
+                json << '        {'
+                json << '          "type": "' + get_type(attribute[:catalog]).sub('[]', '') + '",'
+                json << '          "id": ' + (get_default_value_for_attribute(resource, i).to_i + 1).to_s
+                json << '        }'
+                json << '      ],'
+              else
+                json << '      "data": {'
+                json << '        "type": "' + get_type(attribute[:catalog]) + '",'
+                json << '        "id": ' + get_default_value_for_attribute(resource, i)
+                json << '      },'
+              end
               json
             end
 
