@@ -39,7 +39,7 @@ module SP
               raise "Configuration file #{services_configuration_file} not found." if !File.exist?(services_configuration_file)
               services_configuration = YAML.load_file(services_configuration_file)
               raise "Invalid configuration in file #{services_configuration_file}." if services_configuration.nil?
-              @template_company_id = services_configuration[:company_id]
+              @template_company_id = services_configuration[:company_id] || services_configuration['company_id']
               raise "No template company id found in file #{services_configuration_file}." if @template_company_id.nil?
               @template_company_id = @template_company_id.to_i
               SP::Duh::Db::Transfer.log_with_time "STARTED restoring company #{@company_id} from dump #{@dump_file}"
