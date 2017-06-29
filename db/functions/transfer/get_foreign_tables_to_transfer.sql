@@ -17,6 +17,8 @@ BEGIN
     WITH unsharded_tables AS (
       SELECT jsonb_array_elements_text AS table_name
         FROM jsonb_array_elements_text(%1$L)
+      WHERE
+        jsonb_array_elements_text NOT IN (SELECT unnest(table_name) FROM transfer.get_ignored_auxiliary_tables())
     ),
     foreign_tables AS (
       SELECT
