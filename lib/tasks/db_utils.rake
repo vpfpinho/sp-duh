@@ -61,9 +61,12 @@ end
 
 task :production_safety do
   load_db_config()
+  if FORBIDDEN_HOSTS.include? %x[hostname -s].strip
+    raise "For safety reasons this task can't be run on this machine, no you don't know what you are doing"
+  end
   allowed_hosts = %w(localhost tocstaging cloudex 127.0.0.1)
   unless allowed_hosts.include? $db_config['host']
-    raise "cannot run tasks for target DB, host: #{$db_config['host']} is not allowed"
+    raise "cannot run tasks for target DB, database host #{$db_config['host']} is not allowed"
   end
 end
 
@@ -76,9 +79,14 @@ desc 'Create a new database seed using db_seed.yml spec'
 task :create_db => :production_safety do
   nuke_db = ask('Are you sure? The current database will be destroyed!!!!') { |q| q.default = 'no' }
   if nuke_db.downcase == 'yes'
-    $db.close unless $db.nil?
-    %x[dropdb -p #{$db_config['port']} -U #{$db_config['username']} -h #{$db_config['host']} #{$db_config['database']}]
-    raise 'dropdb failed, bailing out' unless $?.success?
+    
+    connect_to_pg()
+    unless $db.nil?
+      $db.close
+      %x[dropdb -p #{$db_config['port']} -U #{$db_config['username']} -h #{$db_config['host']} #{$db_config['database']}]
+      raise 'dropdb failed, bailing out' unless $?.success?
+    end
+  
     %x[createdb -U #{$db_config['username']} #{$db_config['database']}]
     raise 'createdb failed, bailing out' unless $?.success?
     connect_to_pg()
