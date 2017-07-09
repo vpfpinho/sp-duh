@@ -77,26 +77,26 @@ end
 
 desc 'Create a new database seed using db_seed.yml spec'
 task :create_db => :production_safety do
-  nuke_db = ask('Are you sure? The current database will be destroyed!!!!') { |q| q.default = 'no' }
-  if nuke_db.downcase == 'yes'
-    
-    begin
-      connect_to_pg()
-      unless $db.nil?
-        $db.close
+  
+  begin
+    connect_to_pg()
+    unless $db.nil?
+      $db.close
+      nuke_db = ask('Are you sure? The current database will be destroyed!!!!') { |q| q.default = 'no' }
+      if nuke_db.downcase == 'yes'
         %x[dropdb -p #{$db_config['port']} -U #{$db_config['username']} -h #{$db_config['host']} #{$db_config['database']}]
         raise 'dropdb failed, bailing out' unless $?.success?
       end
-    rescue
     end
-    
-    %x[createdb -U #{$db_config['username']} #{$db_config['database']}]
-    raise 'createdb failed, bailing out' unless $?.success?
-    connect_to_pg()
-    load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_seed.yml')))
-    load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_functions.yml')))
-    config_json_api()
+  rescue
   end
+
+  %x[createdb -U #{$db_config['username']} #{$db_config['database']}]
+  raise 'createdb failed, bailing out' unless $?.success?
+  connect_to_pg()
+  load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_seed.yml')))
+  load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_functions.yml')))
+  config_json_api()
 end
 
 
