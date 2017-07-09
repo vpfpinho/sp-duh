@@ -1,7 +1,7 @@
 
 def load_db_from_yml_spec (a_spec)
   a_spec["folders"].each do |elem|
-    Pathname.glob("#{MODULE_PATH}/db/#{elem}/**/").each do |folder|
+    Pathname.glob("#{MODULE_PATH}/db/#{elem}/**/").sort.each do |folder|
       Dir["#{folder}/*.sql"].each do |file|
         puts "file #{file}"
          $db.exec( File.read(file) )
