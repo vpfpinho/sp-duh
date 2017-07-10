@@ -45,7 +45,7 @@ module SP
           def create_jsonapi_function
             connection.exec %Q[
 
-              CREATE OR REPLACE FUNCTION jsonapi_status (
+              CREATE OR REPLACE FUNCTION jsonapi (
                 IN method               text,
                 IN uri                  text,
                 IN body                 text DEFAULT NULL,
@@ -58,28 +58,6 @@ module SP
                 OUT http_status         integer,
                 OUT response            text
               ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_status' LANGUAGE C;
-
-              CREATE OR REPLACE FUNCTION jsonapi (
-                method         text,
-                uri            text,
-                body           text DEFAULT NULL,
-                schema         text DEFAULT NULL,
-                prefix         text DEFAULT NULL,
-                sharded_schema text DEFAULT NULL
-              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
-
-              CREATE OR REPLACE FUNCTION jsonapi (
-                IN method         text,
-                IN uri            text,
-                IN body           text, -- DEFAULT NULL
-                IN schema         text, -- DEFAULT NULL
-                IN prefix         text, -- DEFAULT NULL
-                IN sharded_schema text, -- DEFAULT NULL
-                IN user_id        text, -- DEFAULT NULL
-                IN company_id     text, -- DEFAULT NULL
-                OUT http_status   integer,
-                OUT response      text
-              ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_with_status' LANGUAGE C;
 
               CREATE OR REPLACE FUNCTION inside_jsonapi (
               ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
