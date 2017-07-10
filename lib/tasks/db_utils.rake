@@ -91,7 +91,7 @@ task :create_db => :production_safety do
   rescue
   end
 
-  %x[createdb -U #{$db_config['username']} #{$db_config['database']}]
+  %x[PGPASSWORD=#{$db_config['password']} createdb -h #{$db_config['host']} -U #{$db_config['username']} #{$db_config['database']}]
   raise 'createdb failed, bailing out' unless $?.success?
   connect_to_pg()
   load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_seed.yml')))
