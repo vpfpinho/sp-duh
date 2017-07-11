@@ -9,7 +9,7 @@ GIT
 PATH
   remote: .
   specs:
-    sp-duh (0.3.3)
+    sp-duh (0.3.4)
       rails (~> 3.2)
 
 GEM
@@ -138,4 +138,4 @@ RUBY VERSION
    ruby 2.1.5p273
 
 BUNDLED WITH
-   1.14.6
+   1.15.1
