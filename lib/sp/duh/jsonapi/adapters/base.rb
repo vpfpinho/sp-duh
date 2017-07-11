@@ -44,6 +44,29 @@ module SP
             unwrap_response(yield)
           end
 
+          # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
+          def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix) ; ; end
+
+          def request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            begin
+              do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
+              [
+                e.status,
+                e.result
+              ]
+            rescue Exception => e
+              [
+                SP::Duh::JSONAPI::Status::ERROR,
+                get_error_response(path, e)
+              ]
+            end
+          end
+
+          def request!(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+
           protected
 
             def url(path) ; File.join(service.url, path) ; end
@@ -102,29 +125,6 @@ module SP
             # get_error_response MUST be implemented by each specialized adapter, and returns a JSONAPI error result as a string or hash
             def get_error_response(path, error) ; ; end
 
-          private
-            # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-            def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix) ; ; end
-
-            def request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              begin
-                do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
-                [
-                  e.status,
-                  e.result
-                ]
-              rescue Exception => e
-                [
-                  SP::Duh::JSONAPI::Status::ERROR,
-                  get_error_response(path, e)
-                ]
-              end
-            end
-
-            def request!(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            end
         end
 
       end
