@@ -64,9 +64,8 @@ task :production_safety do
   if FORBIDDEN_HOSTS.include? %x[hostname -s].strip
     raise "For safety reasons this task can't be run on this machine, no you don't know what you are doing"
   end
-  allowed_hosts = %w(localhost tocstaging cloudex 127.0.0.1)
-  unless allowed_hosts.include? $db_config['host']
-    raise "cannot run tasks for target DB, database host #{$db_config['host']} is not allowed"
+  unless %w(localhost tocstaging cloudex 127.0.0.1).include? $db_config['host']
+    raise "For safety reasons database host #{$db_config['host']} is not allowed"
   end
 end
 
@@ -91,7 +90,7 @@ task :create_db => :production_safety do
   rescue
   end
 
-  %x[createdb -U #{$db_config['username']} #{$db_config['database']}]
+  %x[PGPASSWORD=#{$db_config['password']} createdb -h #{$db_config['host']} -U #{$db_config['username']} #{$db_config['database']}]
   raise 'createdb failed, bailing out' unless $?.success?
   connect_to_pg()
   load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_seed.yml')))
