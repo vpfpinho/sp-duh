@@ -6,7 +6,7 @@ type-restriction: true
 attribute-restriction: false
 empty-is-null: true
 page-size: 0
-request-schema: false
+request-accounting-schema: false
 request-sharded-schema: false
 request-table-prefix: false
 pg-order-by: "created_at"
