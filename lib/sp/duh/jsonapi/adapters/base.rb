@@ -11,35 +11,31 @@ module SP
             @service = service
           end
 
-          def request(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
-            begin
-              do_request(path, schema, prefix, params, method, sharded_schema)
-            rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
-              [
-                e.status,
-                e.result
-              ]
-            rescue Exception => e
-              [
-                SP::Duh::JSONAPI::Status::ERROR,
-                get_error_response(path, e)
-              ]
-            end
+          def get(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request('GET', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+          def post(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request('POST', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+          def patch(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request('PATCH', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+          def delete(path, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request('DELETE', path, nil, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
           end
 
-          def request!(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
-            do_request(path, schema, prefix, params, method, sharded_schema)
+          def get!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request!('GET', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
           end
-
-          def get(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete(path, schema = '', prefix = '', sharded_schema = nil) ; request(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
-
-          def get!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete!(path, schema = '', prefix = '', sharded_schema = nil) ; request!(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
+          def post!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request!('POST', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+          def patch!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request!('PATCH', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
+          def delete!(path, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            request!('DELETE', path, nil, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          end
 
           alias_method :put, :patch
           alias_method :put!, :patch!
@@ -83,9 +79,6 @@ module SP
               params.blank? ?  '' : params.to_json.gsub("'","''")
             end
 
-            # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-            def do_request(path, schema, prefix, params, method, sharded_schema = nil) ; ; end
-
             # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
             def unwrap_response(response)
               status = response[0]
@@ -108,6 +101,30 @@ module SP
 
             # get_error_response MUST be implemented by each specialized adapter, and returns a JSONAPI error result as a string or hash
             def get_error_response(path, error) ; ; end
+
+          private
+            # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
+            def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix) ; ; end
+
+            def request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+              begin
+                do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+              rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
+                [
+                  e.status,
+                  e.result
+                ]
+              rescue Exception => e
+                [
+                  SP::Duh::JSONAPI::Status::ERROR,
+                  get_error_response(path, e)
+                ]
+              end
+            end
+
+            def request!(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+              do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            end
         end
 
       end
