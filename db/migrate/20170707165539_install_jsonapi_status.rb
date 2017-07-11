@@ -1,19 +1,19 @@
 class InstallJsonapiStatus < ActiveRecord::Migration
   def up
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION jsonapi_status (
+      CREATE OR REPLACE FUNCTION jsonapi (
         IN method               text,
         IN uri                  text,
-        IN body                 text DEFAULT NULL,
-        IN user_id              text DEFAULT NULL,
-        IN company_id           text DEFAULT NULL,
-        IN company_schema       text DEFAULT NULL,
-        IN sharded_schema       text DEFAULT NULL,
-        IN accounting_schema    text DEFAULT NULL,
-        IN accounting_prefix    text DEFAULT NULL,
+        IN body                 text,
+        IN user_id              text,
+        IN company_id           text,
+        IN company_schema       text,
+        IN sharded_schema       text,
+        IN accounting_schema    text,
+        IN accounting_prefix    text,
         OUT http_status         integer,
         OUT response            text
-      ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_status' LANGUAGE C;
+      ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
     SQL
     execute <<-'SQL'
       CREATE OR REPLACE FUNCTION get_jsonapi_company_schema (
@@ -23,9 +23,11 @@ class InstallJsonapiStatus < ActiveRecord::Migration
 
   def down
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS jsonapi_status(text,text,text,text,text,text,text,text,text);
+      DROP FUNCTION IF EXISTS jsonapi(text,text,text,text,text,text,text,text,text);
     SQL
     execute <<-'SQL'
+      DROP FUNCTION IF EXISTS get_jsonapi_company_schema ();
+      DROP FUNCTION IF EXISTS get_jsonapi_accounting_schema ();
       DROP FUNCTION IF EXISTS get_jsonapi_company_schema ();
     SQL
   end
