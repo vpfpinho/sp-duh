@@ -10,14 +10,14 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       # Code to run on user templates' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.100
+      sleep 0.050
     end
 
     migrate_fiscal_years do |schema, table_prefix, fy|
       # Code to run on fiscal years' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.100
+      sleep 0.050
     end
   end
 
