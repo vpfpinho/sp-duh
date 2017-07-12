@@ -13,7 +13,7 @@ class InstallJsonapiStatus < ActiveRecord::Migration
         IN accounting_prefix    text,
         OUT http_status         integer,
         OUT response            text
-      ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
+      ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_status' LANGUAGE C;
     SQL
     execute <<-'SQL'
       CREATE OR REPLACE FUNCTION get_jsonapi_company_schema (

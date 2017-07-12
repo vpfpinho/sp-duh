@@ -57,7 +57,7 @@ module SP
                 IN accounting_prefix    text,
                 OUT http_status         integer,
                 OUT response            text
-              ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
+              ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi_status' LANGUAGE C;
 
               CREATE OR REPLACE FUNCTION inside_jsonapi (
               ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
