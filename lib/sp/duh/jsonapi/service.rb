@@ -74,12 +74,6 @@ module SP
               CREATE OR REPLACE FUNCTION get_jsonapi_sharded_schema (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_sharded_schema' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_accounting_schema (
-              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_schema' LANGUAGE C;
-
-              CREATE OR REPLACE FUNCTION get_jsonapi_accounting_prefix (
-              ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_prefix' LANGUAGE C;
-
             ]
           end
       end
