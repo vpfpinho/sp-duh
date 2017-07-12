@@ -9,7 +9,7 @@ GIT
 PATH
   remote: .
   specs:
-    sp-duh (0.3.6)
+    sp-duh (0.3.7)
       rails (~> 3.2)
 
 GEM
