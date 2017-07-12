@@ -27,8 +27,6 @@ class InstallJsonapiStatus < ActiveRecord::Migration
     SQL
     execute <<-'SQL'
       DROP FUNCTION IF EXISTS get_jsonapi_company_schema ();
-      DROP FUNCTION IF EXISTS get_jsonapi_accounting_schema ();
-      DROP FUNCTION IF EXISTS get_jsonapi_company_schema ();
     SQL
   end
 end
