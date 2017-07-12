@@ -11,30 +11,30 @@ module SP
             @service = service
           end
 
-          def get(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request('GET', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def get(path, params, jsonapi_args)
+            request('GET', path, params, jsonapi_args)
           end
-          def post(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request('POST', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def post(path, params, jsonapi_args)
+            request('POST', path, params, jsonapi_args)
           end
-          def patch(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request('PATCH', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def patch(path, params, jsonapi_args)
+            request('PATCH', path, params, jsonapi_args)
           end
-          def delete(path, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request('DELETE', path, nil, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def delete(path, jsonapi_args)
+            request('DELETE', path, nil, jsonapi_args)
           end
 
-          def get!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request!('GET', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def get!(path, params, jsonapi_args)
+            request!('GET', path, params, jsonapi_args)
           end
-          def post!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request!('POST', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def post!(path, params, jsonapi_args)
+            request!('POST', path, params, jsonapi_args)
           end
-          def patch!(path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request!('PATCH', path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def patch!(path, params, jsonapi_args)
+            request!('PATCH', path, params, jsonapi_args)
           end
-          def delete!(path, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            request!('DELETE', path, nil, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def delete!(path, jsonapi_args)
+            request!('DELETE', path, nil, jsonapi_args)
           end
 
           alias_method :put, :patch
@@ -45,11 +45,13 @@ module SP
           end
 
           # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-          def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix) ; ; end
+          def do_request(method, path, params, jsonapi_args) ; ; end
 
-          def request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def request(method, path, params, jsonapi_args)
             begin
-              do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+              unwrap_request do
+                do_request(method, path, params, jsonapi_args)
+              end
             rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
               [
                 e.status,
@@ -63,8 +65,10 @@ module SP
             end
           end
 
-          def request!(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-            do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+          def request!(method, path, params, jsonapi_args)
+            unwrap_request do
+              do_request(method, path, params, jsonapi_args)
+            end
           end
 
           protected

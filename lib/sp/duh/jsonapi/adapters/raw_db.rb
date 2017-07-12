@@ -16,8 +16,8 @@ module SP
 
             def get_error_response(path, error) ; error_response(path, error).to_json ; end
 
-            def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              result = do_request_on_the_db(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            def do_request(method, path, params, jsonapi_args)
+              result = do_request_on_the_db(method, path, params, jsonapi_args)
               raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
               [
                 SP::Duh::JSONAPI::Status::OK,
@@ -27,15 +27,15 @@ module SP
 
           private
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
-            def do_request_on_the_db(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
+            def do_request_on_the_db(method, path, params, jsonapi_args)
               request_sql = ActiveRecord::Base.send(:sanitize_sql, [
                 ":user_id, :company_id, :company_schema, :sharded_schema, :accounting_schema, :accounting_prefix",
-                user_id: user_id,
-                company_id: company_id,
-                company_schema: company_schema,
-                sharded_schema: sharded_schema,
-                accounting_schema: accounting_schema,
-                accounting_prefix: accounting_prefix
+                user_id: jsonapi_args[:user_id],
+                company_id: jsonapi_args[:company_id],
+                company_schema: jsonapi_args[:company_schema],
+                sharded_schema: jsonapi_args[:sharded_schema],
+                accounting_schema: jsonapi_args[:accounting_schema],
+                accounting_prefix: jsonapi_args[:accounting_prefix]
               ], '')
 
               jsonapi_query = if method == 'GET'

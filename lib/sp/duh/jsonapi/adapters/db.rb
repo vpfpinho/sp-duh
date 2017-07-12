@@ -9,14 +9,11 @@ module SP
 
             def get_error_response(path, error) ; HashWithIndifferentAccess.new(error_response(path, error)) ; end
 
-            def do_request(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              raw_result = do_request_on_the_db(method, path, params, user_id, company_id, company_schema, sharded_schema, accounting_schema, accounting_prefix)
-              result = HashWithIndifferentAccess.new(raw_result)
-              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
-              [
-                result[:http_status],
-                HashWithIndifferentAccess.new(JSON.parse(result[:response]))
-              ]
+            def do_request(method, path, params, jsonapi_args)
+              result = HashWithIndifferentAccess.new(do_request_on_the_db(method, path, params, jsonapi_args))
+              result[:response] = JSON.parse(result[:response])
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result[:response])
+              [ result[:http_status], result[:response] ]
             end
 
           private
