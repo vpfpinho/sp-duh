@@ -11,7 +11,7 @@ module SP
 
         def initialize(message = nil, nested = $!)
           if message.nil?
-            message = I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}") if I18n.translation_exists?("sp-duh.exceptions.#{type.underscore.gsub('/','.')}")
+            message = I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}") if I18n.exists?("sp-duh.exceptions.#{type.underscore.gsub('/','.')}")
           end
           super(message)
           @nested = nested
