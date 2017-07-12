@@ -12,7 +12,7 @@ module SP
             def do_request(method, path, params, jsonapi_args)
               result = HashWithIndifferentAccess.new(do_request_on_the_db(method, path, params, jsonapi_args))
               result[:response] = JSON.parse(result[:response])
-              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result[:response])
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result[:response]) if is_error?(result[:response])
               [ result[:http_status], result[:response] ]
             end
 
