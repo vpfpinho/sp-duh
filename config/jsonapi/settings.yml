@@ -6,9 +6,9 @@ type-restriction: true
 attribute-restriction: false
 empty-is-null: true
 page-size: 0
-request-company-schema: false
-request-sharded-schema: false
 request-accounting-schema: false
-request-accounting-prefix: false
+request-sharded-schema: false
+request-company-schema: false
+request-table-prefix: false
 pg-order-by: "created_at"
 pg-search_path: '"$user", request-sharded-schema, public'
