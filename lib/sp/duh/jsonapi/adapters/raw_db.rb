@@ -29,13 +29,13 @@ module SP
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
             def do_request_on_the_db(method, path, params, jsonapi_args)
               request_sql = ActiveRecord::Base.send(:sanitize_sql, [
-                ":userId, :companyId, :companySchema, :shardedSchema, :accountingSchema, :accountingPrefix",
-                userId: jsonapi_args[:userId],
-                companyId: jsonapi_args[:companyId],
-                companySchema: jsonapi_args[:companySchema],
-                shardedSchema: jsonapi_args[:shardedSchema],
-                accountingSchema: jsonapi_args[:accountingSchema],
-                accountingPrefix: jsonapi_args[:accountingPrefix]
+                ":user_id, :company_id, :company_schema, :sharded_schema, :accounting_schema, :accounting_prefix",
+                user_id: jsonapi_args[:user_id],
+                company_id: jsonapi_args[:company_id],
+                company_schema: jsonapi_args[:company_schema],
+                sharded_schema: jsonapi_args[:sharded_schema],
+                accounting_schema: jsonapi_args[:accounting_schema],
+                accounting_prefix: jsonapi_args[:accounting_prefix]
               ], '')
 
               jsonapi_query = if method == 'GET'
