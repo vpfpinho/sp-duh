@@ -77,7 +77,7 @@ module SP
               private
 
                 def get(id, conditions = nil)
-                  result = self.adapter.get("#{self.resource_name}/#{self.id.to_s}", conditions, self.jsonapi_args)
+                  result = self.adapter.get("#{self.resource_name}/#{id.to_s}", conditions, self.jsonapi_args)
                   jsonapi_result_to_instance(result[:data], result)
                 end
 
@@ -171,7 +171,7 @@ module SP
 
             private
 
-              def path_for_id ; "#{self.class.resource_name}/#{self.class.id.to_s}" ; end
+              def path_for_id ; "#{self.class.resource_name}/#{self.id.to_s}" ; end
 
           end
         end
