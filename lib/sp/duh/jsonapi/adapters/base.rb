@@ -11,9 +11,47 @@ module SP
             @service = service
           end
 
-          def request(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
+          def get(path, params, jsonapi_args)
+            request('GET', path, params, jsonapi_args)
+          end
+          def post(path, params, jsonapi_args)
+            request('POST', path, params, jsonapi_args)
+          end
+          def patch(path, params, jsonapi_args)
+            request('PATCH', path, params, jsonapi_args)
+          end
+          def delete(path, jsonapi_args)
+            request('DELETE', path, nil, jsonapi_args)
+          end
+
+          def get!(path, params, jsonapi_args)
+            request!('GET', path, params, jsonapi_args)
+          end
+          def post!(path, params, jsonapi_args)
+            request!('POST', path, params, jsonapi_args)
+          end
+          def patch!(path, params, jsonapi_args)
+            request!('PATCH', path, params, jsonapi_args)
+          end
+          def delete!(path, jsonapi_args)
+            request!('DELETE', path, nil, jsonapi_args)
+          end
+
+          alias_method :put, :patch
+          alias_method :put!, :patch!
+
+          def unwrap_request
+            unwrap_response(yield)
+          end
+
+          # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
+          def do_request(method, path, params, jsonapi_args) ; ; end
+
+          def request(method, path, params, jsonapi_args)
             begin
-              do_request(path, schema, prefix, params, method, sharded_schema)
+              unwrap_request do
+                do_request(method, path, params, jsonapi_args)
+              end
             rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
               [
                 e.status,
@@ -27,25 +65,10 @@ module SP
             end
           end
 
-          def request!(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
-            do_request(path, schema, prefix, params, method, sharded_schema)
-          end
-
-          def get(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete(path, schema = '', prefix = '', sharded_schema = nil) ; request(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
-
-          def get!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete!(path, schema = '', prefix = '', sharded_schema = nil) ; request!(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
-
-          alias_method :put, :patch
-          alias_method :put!, :patch!
-
-          def unwrap_request
-            unwrap_response(yield)
+          def request!(method, path, params, jsonapi_args)
+            unwrap_request do
+              do_request(method, path, params, jsonapi_args)
+            end
           end
 
           protected
@@ -83,9 +106,6 @@ module SP
               params.blank? ?  '' : params.to_json.gsub("'","''")
             end
 
-            # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-            def do_request(path, schema, prefix, params, method, sharded_schema = nil) ; ; end
-
             # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
             def unwrap_response(response)
               status = response[0]
@@ -108,6 +128,7 @@ module SP
 
             # get_error_response MUST be implemented by each specialized adapter, and returns a JSONAPI error result as a string or hash
             def get_error_response(path, error) ; ; end
+
         end
 
       end

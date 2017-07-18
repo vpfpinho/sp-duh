@@ -11,6 +11,7 @@ module SP
         class InvalidResourcePublisherError < SP::Duh::Exceptions::GenericDetailedError ; ; end
         class DuplicateResourceError < SP::Duh::Exceptions::GenericDetailedError ; ; end
         class SaveConfigurationError < SP::Duh::Exceptions::GenericError ; ; end
+        class InvalidJSONAPIKeyError < SP::Duh::Exceptions::GenericDetailedError ; ; end
 
         # JSONAPI model querying errors
 

@@ -11,8 +11,7 @@ module SP
               # Define schema and prefix accessors at the class (and subclass) level (static).
               # These attribute values are inherited by subclasses, but can be changed in each subclass without affecting the parent class.
               # Instances can access these attributes at the class level only.
-              class_attribute :schema, instance_reader: false, instance_writer: false
-              class_attribute :prefix, instance_reader: false, instance_writer: false
+              class_attribute :jsonapi_args, instance_reader: false, instance_writer: false
 
               # Idem for data adapter configuration...
               # In a similar way to ActiveRecord::Base.connection, the adapter should be defined at the base level and is inherited by all subclasses
@@ -78,17 +77,13 @@ module SP
               private
 
                 def get(id, conditions = nil)
-                  result = self.adapter.unwrap_request do
-                    self.adapter.get(File.join(self.resource_name, id.to_s), self.schema.to_s, self.prefix.to_s, conditions)
-                  end
+                  result = self.adapter.get("#{self.resource_name}/#{id.to_s}", conditions, self.jsonapi_args)
                   jsonapi_result_to_instance(result[:data], result)
                 end
 
                 def get_all(condition)
                   got = []
-                  result = self.adapter.unwrap_request do
-                    self.adapter.get(self.resource_name, self.schema.to_s, self.prefix.to_s, condition)
-                  end
+                  result = self.adapter.get(self.resource_name, condition, self.jsonapi_args)
                   if result
                     got = result[:data].map do |item|
                       data = { data: item }
@@ -128,7 +123,7 @@ module SP
 
             def destroy!
               if !new_record?
-                self.class.adapter.delete(path_for_id, self.class.schema.to_s, self.class.prefix.to_s)
+                self.class.adapter.delete(path_for_id, self.class.jsonapi_args)
               end
             end
 
@@ -150,9 +145,7 @@ module SP
                   }
                 }
               end
-              result = self.class.adapter.unwrap_request do
-                self.class.adapter.post(self.class.resource_name, self.class.schema.to_s, self.class.prefix.to_s, params)
-              end
+              result = self.class.adapter.post(self.class.resource_name, params, self.class.jsonapi_args)
               # Set the id to the newly created id
               self.id = result[:data][:id]
             end
@@ -165,9 +158,7 @@ module SP
                   attributes: get_persistent_json.reject { |k,v| k == :id }
                 }
               }
-              result = self.class.adapter.unwrap_request do
-                self.class.adapter.patch(path_for_id, self.class.schema.to_s, self.class.prefix.to_s, params)
-              end
+              result = self.class.adapter.patch(path_for_id, params, self.class.jsonapi_args)
             end
 
             def get_persistent_json
@@ -180,7 +171,7 @@ module SP
 
             private
 
-              def path_for_id ; File.join(self.class.resource_name, self.id.to_s) ; end
+              def path_for_id ; "#{self.class.resource_name}/#{self.id.to_s}" ; end
 
           end
         end
