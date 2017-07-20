@@ -24,11 +24,12 @@ module SP
           @protocol = value.to_sym
         end
 
-        def initialize(pg_connection, url)
+        def initialize(pg_connection, url, adapter = SP::Duh::JSONAPI::Adapters::Db)
           @pg_connection = pg_connection
           @url = url
           protocol = :db
           @configuration = Configuration.new(pg_connection, url)
+          SP::Duh::JSONAPI::Model::Base.adapter = @adapter = adapter.new(self)
         end
 
         def setup
@@ -39,6 +40,8 @@ module SP
           end
           configuration.setup()
         end
+
+        def adapter ; @adapter ; end
 
         private
 
