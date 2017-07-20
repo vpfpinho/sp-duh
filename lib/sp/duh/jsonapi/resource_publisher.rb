@@ -13,6 +13,7 @@ module SP
         extend ::ActiveSupport::Concern
 
         included do
+          SP::Duh::JSONAPI::Configuration.add_publisher self
         end
 
         module ClassMethods

@@ -34,7 +34,7 @@ def load_db_config
   $db_config = YAML.load_file(File.join('config', 'database.yml'))[ENV['RAILS_ENV']]
 end
 
-def connect_to_pg 
+def connect_to_pg
   load_db_config()
   $db = PG.connect(host: $db_config['host'], port: $db_config['port'], dbname: $db_config['database'], user: $db_config['username'], password: $db_config['password'])
 end
@@ -42,9 +42,6 @@ end
 def config_json_api
   $jsonapi_service = SP::Duh::JSONAPI::Service.new($db, JSONAPI_URL)
   $jsonapi_service.setup()
-  JSONAPI_PUBLISHERS.each do |publisher|
-    $jsonapi_service.configuration.add_publisher(publisher)
-  end
   $jsonapi_service.configuration.reload!
 end
 
@@ -76,7 +73,7 @@ end
 
 desc 'Create a new database seed using db_seed.yml spec'
 task :create_db => :production_safety do
-  
+
   begin
     connect_to_pg()
     unless $db.nil?
