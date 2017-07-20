@@ -1,7 +1,7 @@
 
 def load_db_from_yml_spec (a_spec)
   a_spec["folders"].each do |elem|
-    Pathname.glob("#{MODULE_PATH}/db/#{elem}/**/").sort.each do |folder|
+    Pathname.glob("#{MOD_PATH}/db/#{elem}/**/").sort.each do |folder|
       Dir["#{folder}/*.sql"].sort.each do |file|
         puts "file #{file}"
          $db.exec( File.read(file) )
@@ -40,9 +40,9 @@ def connect_to_pg
 end
 
 def config_json_api
-  $jsonapi_service = SP::Duh::JSONAPI::Service.new($db, JSONAPI_URL)
-  $jsonapi_service.setup()
-  $jsonapi_service.configuration.reload!
+  jsonapi_service = SP::Duh::JSONAPI::Service.new($db, JSONAPI_PREFIX)
+  jsonapi_service.setup()
+  jsonapi_service.configuration.reload!
 end
 
 task :pg_connect do
@@ -58,6 +58,9 @@ end
 
 task :production_safety do
   load_db_config()
+  unless Object.const_defined?('FORBIDDEN_HOSTS')
+    raise "To run this task you must define 'FORBIDDEN_HOSTS' No, you don't know what you are doing!!!!"
+  end
   if FORBIDDEN_HOSTS.include? %x[hostname -s].strip
     raise "For safety reasons this task can't be run on this machine, no you don't know what you are doing"
   end
@@ -66,9 +69,12 @@ task :production_safety do
   end
 end
 
-desc 'Reload GEM functions defined in db_functions.yml'
+desc 'Reload GEM functions defined in db_functions.yml (FOR LOCAL GEM ONLY)'
 task :reload_functions => [:production_safety, :pg_connect] do
-  load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_functions.yml')))
+  unless Object.const_defined?('MOD_PATH')
+    raise "To run this task you must define 'MOD_PATH'!"
+  end
+  load_db_from_yml_spec(YAML.load_file(File.join(MOD_PATH, 'config', 'db_functions.yml')))
 end
 
 desc 'Create a new database seed using db_seed.yml spec'
@@ -90,8 +96,8 @@ task :create_db => :production_safety do
   %x[PGPASSWORD=#{$db_config['password']} createdb -h #{$db_config['host']} -U #{$db_config['username']} #{$db_config['database']}]
   raise 'createdb failed, bailing out' unless $?.success?
   connect_to_pg()
-  load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_seed.yml')))
-  load_db_from_yml_spec(YAML.load_file(File.join(MODULE_PATH, 'config', 'db_functions.yml')))
+  load_db_from_yml_spec(YAML.load_file(File.join(MOD_PATH, 'config', 'db_seed.yml')))
+  load_db_from_yml_spec(YAML.load_file(File.join(MOD_PATH, 'config', 'db_functions.yml')))
   config_json_api()
 end
 
