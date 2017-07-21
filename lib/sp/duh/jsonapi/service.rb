@@ -14,7 +14,14 @@ module SP
         def self.protocols ; [ :db, :http ] ; end
         def connection ; @pg_connection ; end
         def url ; @url ; end
+        def set_url(value) ; @url = value ; end
         def configuration ; @configuration ; end
+        def adapter
+          raise Exceptions::ServiceSetupError.new('JSONAPI prefix not specified', nil) if url.blank?
+          @adapter_instance ||= @adapter.new(self)
+          SP::Duh::JSONAPI::Model::Base.adapter ||= @adapter_instance
+          @adapter_instance
+        end
 
         def protocol ; @protocol ; end
         def protocol=(value)
@@ -24,12 +31,13 @@ module SP
           @protocol = value.to_sym
         end
 
-        def initialize(pg_connection, url, adapter = SP::Duh::JSONAPI::Adapters::Db)
+        def initialize(pg_connection, url, default_adapter = SP::Duh::JSONAPI::Adapters::Db)
           @pg_connection = pg_connection
-          @url = url
-          protocol = :db
+          @url           = url
+          protocol       = :db
           @configuration = Configuration.new(pg_connection, url)
-          SP::Duh::JSONAPI::Model::Base.adapter = @adapter = adapter.new(self)
+          @adapter       = default_adapter
+          adapter unless url.nil?
         end
 
         def setup
@@ -41,7 +49,13 @@ module SP
           configuration.setup()
         end
 
-        def adapter ; @adapter ; end
+        def close
+          @pg_connection.close if !@pg_connection.nil? && !@pg_connection.finished?
+          @adapter_instance = nil
+          @adapter          = nil
+          @url              = nil
+          @configuration    = nil
+        end
 
         private
 
