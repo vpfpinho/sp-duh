@@ -24,24 +24,29 @@ BEGIN
 
     -- SEARCH FOR LOCALE --
     locale := lower(a_locale);
-    EXECUTE
-        format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''', a_locale)
-    INTO tmp_text;
-
-    locale_exists := tmp_text IS NOT NULL;
+    BEGIN
+      EXECUTE
+          format('SELECT %1$s FROM public.i18n LIMIT 0', a_locale)
+      INTO tmp_text;
+      locale_exists := TRUE;
+    EXCEPTION WHEN undefined_column THEN
+      locale_exists := FALSE;
+    END;
     IF FALSE = locale_exists
     THEN
         -- locale fallback is language code --
         IF LENGTH(a_locale) = 5
         THEN
-            locale := SUBSTR(locale, 1, 2);
-            EXECUTE
-                format('SELECT attname FROM pg_catalog.pg_attribute WHERE attrelid = (SELECT oid FROM pg_catalog.pg_class WHERE relname = ''i18n'') AND attname = ''%1$s''',
-                    locale
-                )
-            INTO tmp_text;
-            locale_exists := tmp_text IS NOT NULL;
 
+            locale := SUBSTR(locale, 1, 2);
+            BEGIN
+              EXECUTE
+                  format('SELECT %1$s FROM public.i18n LIMIT 0', locale)
+              INTO tmp_text;
+              locale_exists := TRUE;
+            EXCEPTION WHEN undefined_column THEN
+              locale_exists := FALSE;
+            END;
             IF TRUE = locale_exists
             THEN
                 locale := locale || ',';
@@ -118,4 +123,4 @@ BEGIN
     RETURN spellout_result;
 END;
 $BODY$
-LANGUAGE 'plpgsql' IMMUTABLE;
+LANGUAGE 'plpgsql' STABLE;
