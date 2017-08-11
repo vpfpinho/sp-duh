@@ -7,7 +7,7 @@ class AlterGetI18n < ActiveRecord::Migration
       CREATE OR REPLACE FUNCTION common.get_i18n(
         key       TEXT,
         locale    TEXT DEFAULT 'pt_PT',
-        VARIADIC  a_args text[] DEFAULT '{}'
+        VARIADIC a_args text[] DEFAULT NULL
       )
       RETURNS text AS $BODY$
       DECLARE
@@ -29,12 +29,18 @@ class AlterGetI18n < ActiveRecord::Migration
           ELSE locale
         END;
 
-        SELECT formatted FROM pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, a_args::text)
-        INTO _i18n_text;
+        IF a_args IS NULL THEN
+          SELECT formatted FROM pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, '{}')
+          INTO _i18n_text;
+        ELSE
+          SELECT formatted FROM pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, VARIADIC a_args)
+          INTO _i18n_text;
+        END IF;
 
         RETURN _i18n_text;
       END;
       $BODY$ LANGUAGE plpgsql IMMUTABLE;
+
     SQL
 
 
