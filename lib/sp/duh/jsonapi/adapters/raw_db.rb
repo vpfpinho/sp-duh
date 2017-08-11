@@ -27,7 +27,7 @@ module SP
 
           private
             def valid_keys
-              [:prefix, :user_id, :company_id, :company_schema, :sharded_schema, :accounting_schema, :accounting_prefix]
+              [:prefix, :user_id, :company_id, :company_schema, :sharded_schema, :accounting_schema, :accounting_prefix, :accounting_schema_for_fiscal_years]
             end
 
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
