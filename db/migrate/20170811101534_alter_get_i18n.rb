@@ -30,10 +30,10 @@ class AlterGetI18n < ActiveRecord::Migration
         END;
 
         IF a_args IS NULL THEN
-          SELECT formatted FROM pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, '{}')
+          SELECT formatted FROM public.pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, '{}')
           INTO _i18n_text;
         ELSE
-          SELECT formatted FROM pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, VARIADIC a_args)
+          SELECT formatted FROM public.pg_cpp_utils_format_message(locale::varchar, _i18n_text::varchar, VARIADIC a_args)
           INTO _i18n_text;
         END IF;
 

@@ -9,18 +9,18 @@ class I18nAlfa < ActiveRecord::Migration
       CREATE TYPE public.pg_cpp_utils_format_number_record AS (formatted text);
 
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_version (
-      ) RETURNS pg_cpp_utils_version_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_version' LANGUAGE C STRICT;
+      ) RETURNS public.pg_cpp_utils_version_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_version' LANGUAGE C STRICT;
 
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_invoice_hash (
         a_pem_uri text,
         a_payload text
-      ) RETURNS pg_cpp_utils_hash_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_invoice_hash' LANGUAGE C STRICT;
+      ) RETURNS public.pg_cpp_utils_hash_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_invoice_hash' LANGUAGE C STRICT;
 
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_number_spellout (
         a_locale            varchar(5),
         a_payload           float8,
         a_spellout_override text default ''
-      ) RETURNS pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_number_spellout' LANGUAGE C STRICT;
+      ) RETURNS public.pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_number_spellout' LANGUAGE C STRICT;
 
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_currency_spellout (
         a_locale            varchar(5),
@@ -32,13 +32,13 @@ class I18nAlfa < ActiveRecord::Migration
         a_minor_plural      text,
         a_format            text,
         a_spellout_override text default ''
-      ) RETURNS pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_currency_spellout' LANGUAGE C STRICT;
+      ) RETURNS public.pg_cpp_utils_number_spellout_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_currency_spellout' LANGUAGE C STRICT;
 
       CREATE OR REPLACE FUNCTION public.pg_cpp_utils_format_number (
         a_locale  varchar(5),
         a_value   float8,
         a_pattern text
-      ) RETURNS pg_cpp_utils_format_number_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_format_number' LANGUAGE C STRICT;
+      ) RETURNS public.pg_cpp_utils_format_number_record AS '$libdir/pg-cpp-utils.so', 'pg_cpp_utils_format_number' LANGUAGE C STRICT;
 
 			ALTER TABLE public.currencies ADD COLUMN symbol_at_right BOOLEAN DEFAULT true;
 			UPDATE public.currencies SET symbol_at_right=false WHERE iso_code IN ('GBP', 'USD', 'BRL');
