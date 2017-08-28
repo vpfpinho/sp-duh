@@ -11,15 +11,12 @@ namespace :sp do
       redis = Redis.new(:host => redis_config[:master][:hostname], :port => redis_config[:master][:port])
       oauth_config[:'oauth-apps'].each do |service|
         service['clients'].each do |client|
-          redis.hmset(
-             "#{service['service_id']}:oauth:#{client['client_id']}"   ,
-             "secret"                , "#{client['secret']}",
-             "redirect_uri"          , "#{client['redirect_uri']}",
-             "authorization_code_ttl", "#{client['authorization_code_ttl']}",
-             "access_token_ttl"      , "#{client['access_token_ttl']}",
-             "refresh_token_ttl"     , "#{client['refresh_token_ttl']}",
-             "scope"                 , "#{client['scope']}"
-          )
+          client.each do |key, value|
+            redis.hmset(
+               "#{service['service_id']}:oauth:#{client['client_id']}"   ,
+               "#{key}"                 , "#{value}"
+            )
+          end
         end
       end
     end
