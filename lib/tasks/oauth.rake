@@ -1,3 +1,5 @@
+require 'redis'
+
 namespace :sp do
   namespace :duh do
 
