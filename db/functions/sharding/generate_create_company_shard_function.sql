@@ -338,6 +338,8 @@ BEGIN
   -- Build the views --
   ---------------------
 
+  queries := queries || '{ -- Create views }'::TEXT[];
+
   SELECT json_object(array_agg(dependent_view), array_agg(depends_on))::JSONB
     INTO all_objects_data
   FROM (
@@ -365,7 +367,7 @@ BEGIN
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
     WHERE n.nspname = 'public'
-      AND NOT all_objects_data ? v.viewname
+      AND NOT COALESCE(all_objects_data,'{}'::JSONB) ? v.viewname
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
 
@@ -386,7 +388,7 @@ BEGIN
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
     WHERE n.nspname = 'public'
-      AND all_objects_data ? v.viewname
+      AND COALESCE(all_objects_data,'{}'::JSONB) ? v.viewname
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
 
