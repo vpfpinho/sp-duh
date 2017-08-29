@@ -1,3 +1,5 @@
+require 'yaml'
+require 'pg'
 
 def load_db_from_yml_spec (a_spec)
   a_spec["folders"].each do |elem|

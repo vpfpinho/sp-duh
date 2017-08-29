@@ -32,6 +32,9 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfe
 # API documentationlibrary classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'doc', 'generator'))
 
+# i18n classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'i18n', 'excel_loader'))
+
 # SP helper lib
 require 'sp-excel-loader'
 
