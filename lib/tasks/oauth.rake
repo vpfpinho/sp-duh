@@ -13,6 +13,8 @@ namespace :sp do
       redis = Redis.new(:host => redis_config[:master][:hostname], :port => redis_config[:master][:port])
       oauth_config[:'oauth-apps'].each do |service|
         service['clients'].each do |client|
+          # First, remove old key
+          redis.del "#{service['service_id']}:oauth:#{client['client_id']}"
           client.each do |key, value|
             redis.hmset(
                "#{service['service_id']}:oauth:#{client['client_id']}"   ,
