@@ -12,7 +12,7 @@ class InstallPgCppUtilsFormatMessage < ActiveRecord::Migration
 
   def down
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS public.pg_cpp_utils_format_message(
+      DROP FUNCTION IF EXISTS public.pg_cpp_utils_format_message(character varying, character varying, text[]);
       DROP TYPE IF EXISTS public.pg_cpp_utils_format_message_record;
     SQL
   end
