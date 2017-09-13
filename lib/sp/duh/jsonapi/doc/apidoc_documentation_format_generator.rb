@@ -164,7 +164,7 @@ module SP
             def get_resource_data(r, name) ; r[:resource][name] ; end
             def get_attribute(r, i) ; r[:attributes][i] if r[:attributes] ; end
             def get_attribute_data(r, i, name) ; get_attribute(r, i)[name] ; end
-            def get_type(r) ; r['format_type'].gsub(/character varying\(\d+\)/, 'text').gsub(' without time zone', '').gsub(' with time zone', '') ; end
+            def get_type(r) ; r['format_type'].gsub(/character varying\(\d+\)/, 'text').gsub(/character/, 'text').gsub(' without time zone', '').gsub(' with time zone', '') ; end
 
             def get_api_method_json(resource, method, single = true)
               json = [ '{' ]

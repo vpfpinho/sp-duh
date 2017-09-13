@@ -21,7 +21,11 @@ module SP
 
           def get_attribute(name)
             if @attrs.nil?
-              @attrs = get_db_table_attribute_definitions(get_settings[:schema], get_settings[:table_name])
+              if get_settings[:table_name].nil?
+                @attrs = get_db_function_attribute_definitions(get_settings[:schema], get_settings[:function_name])
+              else
+                @attrs = get_db_table_attribute_definitions(get_settings[:schema], get_settings[:table_name])
+              end
             end
             @attrs[name.to_s]
           end
@@ -64,6 +68,27 @@ module SP
               definitions
             end
 
+            def get_db_function_attribute_definitions(schema, function_name)
+              return {} if schema.nil? || function_name.nil?
+              result = @pg_connection.exec %Q[
+                SELECT
+                  trim(split_part(regexp_replace(p.argument, E'^OUT ', ''), ' ', 1)) AS attname,
+                  trim(split_part(regexp_replace(p.argument, E'^OUT ', ''), ' ', 2)) AS format_type
+                FROM (
+                  SELECT
+                    trim(unnest(regexp_split_to_array(pg_catalog.pg_get_function_arguments(p.oid), E','))) as argument
+                  FROM pg_catalog.pg_proc p
+                       LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+                  WHERE p.proname ~ '^(#{function_name})$'
+                    AND n.nspname ~ '^(#{schema})$'
+                ) p
+                WHERE
+                  CASE WHEN p.argument ~ '^OUT' THEN true ELSE false END = true
+              ]
+              definitions = {}
+              result.each { |a| definitions.merge!({ a['attname'] => a })  }
+              definitions
+            end
         end
 
       end

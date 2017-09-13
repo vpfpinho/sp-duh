@@ -167,7 +167,7 @@ module SP
 
                   use_schema = get_value_of('request-schema', line) if use_schema.nil?
                   use_schema = get_value_of('request-sharded-schema', line) if use_schema.nil?
-                                    
+
                   # Process resource attributes
 
                   if is_beginning_of_attribute_section?(line)
@@ -232,7 +232,9 @@ module SP
                   a = get_jsonapi_attribute(line)
                   if a.first.nil?
                     type = get_value_of('resource', line)
-                    if !type.nil?
+                    table_name = get_value_of('pg-table', line)
+                    if !type.nil? || !table_name.nil?
+                      type ||= table_name
                       metadata[:attributes].last.merge!({
                         catalog: {
                           'format_type' => (context == :'to-one' ? type : "#{type}[]")
