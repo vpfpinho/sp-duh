@@ -10,7 +10,7 @@ namespace :sp do
       redis_config = HashWithIndifferentAccess[YAML.load_file(File.join(root_path, 'config/redis.yml'))]
       oauth_config = HashWithIndifferentAccess[YAML.load_file(File.join(root_path, 'config/oauth.yml'))]
 
-      redis = Redis.new(:host => redis_config[:master][:hostname], :port => redis_config[:master][:port])
+      redis = Redis.new(:host => redis_config[:casper][:hostname], :port => redis_config[:casper][:port])
       oauth_config[:'oauth-apps'].each do |service|
         service['clients'].each do |client|
           # First, remove old key
