@@ -1,21 +1,21 @@
 class ResetJsonapiToNewVersion < ActiveRecord::Migration
   def up
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS jsonapi(text,text,text,text,text,text);
-      DROP FUNCTION IF EXISTS jsonapi(text,text,text,text,text,text,text,text);
-      DROP FUNCTION IF EXISTS jsonapi(text,text,text,text,text,text,text,text,text);
+      DROP FUNCTION IF EXISTS public.jsonapi(text,text,text,text,text,text);
+      DROP FUNCTION IF EXISTS public.jsonapi(text,text,text,text,text,text,text,text);
+      DROP FUNCTION IF EXISTS public.jsonapi(text,text,text,text,text,text,text,text,text);
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_schema ();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_schema ();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_table_prefix ();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_table_prefix ();
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION jsonapi (
+      CREATE OR REPLACE FUNCTION public.jsonapi (
         IN method               text,
         IN uri                  text,
         IN body                 text,
@@ -31,37 +31,37 @@ class ResetJsonapiToNewVersion < ActiveRecord::Migration
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION inside_jsonapi (
+      CREATE OR REPLACE FUNCTION public.inside_jsonapi (
       ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_user (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_user (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_user' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_company (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_company (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_company' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_company_schema (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_company_schema (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_company_schema' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_sharded_schema (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_sharded_schema (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_sharded_schema' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_accounting_schema (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_accounting_schema (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_schema' LANGUAGE C;
     SQL
 
     execute <<-'SQL'
-      CREATE OR REPLACE FUNCTION get_jsonapi_accounting_prefix (
+      CREATE OR REPLACE FUNCTION public.get_jsonapi_accounting_prefix (
       ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_prefix' LANGUAGE C;
     SQL
 
@@ -71,35 +71,35 @@ class ResetJsonapiToNewVersion < ActiveRecord::Migration
     puts "WARNING: Dropping new functions but NOT recreating old functions!"
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS jsonapi(text,text,text,text,text,text,text,text,text);
+      DROP FUNCTION IF EXISTS public.jsonapi(text,text,text,text,text,text,text,text,text);
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS inside_jsonapi ()
+      DROP FUNCTION IF EXISTS public.inside_jsonapi ()
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_user();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_user();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_company();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_company();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_company_schema();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_company_schema();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_sharded_schema();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_sharded_schema();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_accounting_schema();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_accounting_schema();
     SQL
 
     execute <<-'SQL'
-      DROP FUNCTION IF EXISTS get_jsonapi_accounting_prefix();
+      DROP FUNCTION IF EXISTS public.get_jsonapi_accounting_prefix();
     SQL
   end
 end

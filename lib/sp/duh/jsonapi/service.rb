@@ -62,7 +62,7 @@ module SP
           def create_jsonapi_function
             connection.exec %Q[
 
-              CREATE OR REPLACE FUNCTION jsonapi (
+              CREATE OR REPLACE FUNCTION public.jsonapi (
                 IN method               text,
                 IN uri                  text,
                 IN body                 text,
@@ -76,25 +76,25 @@ module SP
                 OUT response            text
               ) RETURNS record AS '$libdir/pg-jsonapi.so', 'jsonapi' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION inside_jsonapi (
+              CREATE OR REPLACE FUNCTION public.inside_jsonapi (
               ) RETURNS boolean AS '$libdir/pg-jsonapi.so', 'inside_jsonapi' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_user (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_user (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_user' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_company (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_company (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_company' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_company_schema (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_company_schema (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_company_schema' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_sharded_schema (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_sharded_schema (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_sharded_schema' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_accounting_schema (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_accounting_schema (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_schema' LANGUAGE C;
 
-              CREATE OR REPLACE FUNCTION get_jsonapi_accounting_prefix (
+              CREATE OR REPLACE FUNCTION public.get_jsonapi_accounting_prefix (
               ) RETURNS text AS '$libdir/pg-jsonapi.so', 'get_jsonapi_accounting_prefix' LANGUAGE C;
 
             ]
