@@ -8,10 +8,17 @@ module SP
           protected
 
             def unwrap_response(response)
-              status = response[0].to_i
-              result = response[1]
-              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if status != SP::Duh::JSONAPI::Status::OK
-              result
+              # As the method request() is EXACTLY the same as request!(), and it cannot be reverted without affecting lots of changes already made in the app's controllers...
+              # Allow for response being both a [ status, result ] pair (as of old) OR a single result (as of now)
+              if response.is_a?(Array)
+                status = response[0].to_i
+                result = response[1]
+                raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if status != SP::Duh::JSONAPI::Status::OK
+                result
+              else
+                # No raise here, we do not know the status...
+                response
+              end
             end
 
             def get_error_response(path, error) ; error_response(path, error).to_json ; end

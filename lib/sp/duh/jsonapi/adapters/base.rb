@@ -48,21 +48,25 @@ module SP
           def do_request(method, path, params, jsonapi_args) ; ; end
 
           def request(method, path, params, jsonapi_args)
-            begin
+            # As it is now, this method is EXACTLY the same as request!()
+            # And it cannot be reverted without affecting lots of changes already made in the app's controllers.
+            # TODO: end it, or end the !() version
+            # begin
               unwrap_request do
                 do_request(method, path, params, jsonapi_args)
               end
-            rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
-              [
-                e.status,
-                e.result
-              ]
-            rescue Exception => e
-              [
-                SP::Duh::JSONAPI::Status::ERROR,
-                get_error_response(path, e)
-              ]
-            end
+            # THIS CAN'T BE DONE, because the same method cannot return both a single result (in case there is NOT an error) and a pair (in case there IS an error)
+            # rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
+            #   [
+            #     e.status,
+            #     e.result
+            #   ]
+            # rescue Exception => e
+            #   [
+            #     SP::Duh::JSONAPI::Status::ERROR,
+            #     get_error_response(path, e)
+            #   ]
+            # end
           end
 
           def request!(method, path, params, jsonapi_args)
@@ -108,9 +112,15 @@ module SP
 
             # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
             def unwrap_response(response)
-              status = response[0]
-              result = response[1]
-              result
+              # As the method request() is EXACTLY the same as request!(), and it cannot be reverted without affecting lots of changes already made in the app's controllers...
+              # Allow for response being both a [ status, result ] pair (as of old) OR a single result (as of now)
+              if response.is_a?(Array)
+                status = response[0].to_i
+                result = response[1]
+                result
+              else
+                response
+              end
             end
 
             def error_response(path, error)
