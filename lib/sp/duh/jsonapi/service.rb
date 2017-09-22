@@ -57,6 +57,10 @@ module SP
           @configuration    = nil
         end
 
+        def set_jsonapi_parameters(parameters = nil) ; @parameters = parameters ; end
+        def clear_jsonapi_args                       ; @parameters = nil ; end
+        def parameters                               ; @parameters ; end
+
         private
 
           def create_jsonapi_function

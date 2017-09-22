@@ -11,30 +11,30 @@ module SP
             @service = service
           end
 
-          def get(path, params, jsonapi_args)
-            request('GET', path, params, jsonapi_args)
+          def get(path, params = {})
+            request('GET', path, params)
           end
-          def post(path, params, jsonapi_args)
-            request('POST', path, params, jsonapi_args)
+          def post(path, params = {})
+            request('POST', path, params)
           end
-          def patch(path, params, jsonapi_args)
-            request('PATCH', path, params, jsonapi_args)
+          def patch(path, params = {})
+            request('PATCH', path, params)
           end
-          def delete(path, jsonapi_args)
-            request('DELETE', path, nil, jsonapi_args)
+          def delete(path)
+            request('DELETE', path, nil)
           end
 
-          def get!(path, params, jsonapi_args)
-            request!('GET', path, params, jsonapi_args)
+          def get!(path, params = {})
+            request!('GET', path, params)
           end
-          def post!(path, params, jsonapi_args)
-            request!('POST', path, params, jsonapi_args)
+          def post!(path, params = {})
+            request!('POST', path, params)
           end
-          def patch!(path, params, jsonapi_args)
-            request!('PATCH', path, params, jsonapi_args)
+          def patch!(path, params = {})
+            request!('PATCH', path, params)
           end
-          def delete!(path, jsonapi_args)
-            request!('DELETE', path, nil, jsonapi_args)
+          def delete!(path)
+            request!('DELETE', path, nil)
           end
 
           alias_method :put, :patch
@@ -45,15 +45,15 @@ module SP
           end
 
           # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-          def do_request(method, path, params, jsonapi_args) ; ; end
+          def do_request(method, path, params) ; ; end
 
-          def request(method, path, params, jsonapi_args)
+          def request(method, path, params)
             # As it is now, this method is EXACTLY the same as request!()
             # And it cannot be reverted without affecting lots of changes already made in the app's controllers.
             # TODO: end it, or end the !() version
             # begin
               unwrap_request do
-                do_request(method, path, params, jsonapi_args)
+                do_request(method, path, params)
               end
             # THIS CAN'T BE DONE, because the same method cannot return both a single result (in case there is NOT an error) and a pair (in case there IS an error)
             # rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
@@ -69,9 +69,9 @@ module SP
             # end
           end
 
-          def request!(method, path, params, jsonapi_args)
+          def request!(method, path, params)
             unwrap_request do
-              do_request(method, path, params, jsonapi_args)
+              do_request(method, path, params)
             end
           end
 
