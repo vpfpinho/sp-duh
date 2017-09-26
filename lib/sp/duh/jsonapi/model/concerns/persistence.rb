@@ -8,11 +8,6 @@ module SP
 
             included do
 
-              # Define schema and prefix accessors at the class (and subclass) level (static).
-              # These attribute values are inherited by subclasses, but can be changed in each subclass without affecting the parent class.
-              # Instances can access these attributes at the class level only.
-              class_attribute :jsonapi_args, instance_reader: false, instance_writer: false
-
               # Idem for data adapter configuration...
               # In a similar way to ActiveRecord::Base.connection, the adapter should be defined at the base level and is inherited by all subclasses
               class_attribute :adapter, instance_reader: false, instance_writer: false
@@ -32,6 +27,10 @@ module SP
 
               def find!(id, conditions = nil) ; get(id, conditions) ; end
 
+              def find_explicit!(exp_accounting_schema, exp_accounting_prefix, id, conditions = nil)
+                get_explicit(exp_accounting_schema, exp_accounting_prefix, id, conditions)
+              end
+
               def find(id, conditions = nil)
                 begin
                   get(id, conditions)
@@ -41,6 +40,7 @@ module SP
               end
 
               def query!(condition) ; get_all(condition) ; end
+              def query_explicit!(exp_accounting_schema, exp_accounting_prefix, condition) ; get_all_explicit(exp_accounting_schema, exp_accounting_prefix, condition) ; end
 
               def query(condition)
                 begin
@@ -76,14 +76,32 @@ module SP
 
               private
 
+                def get_explicit(exp_accounting_schema, exp_accounting_prefix, id, conditions = nil)
+                  result = self.adapter.get_explicit!(exp_accounting_schema, exp_accounting_prefix, "#{self.resource_name}/#{id.to_s}", conditions)
+                  jsonapi_result_to_instance(result[:data], result)
+                end
+
                 def get(id, conditions = nil)
-                  result = self.adapter.get("#{self.resource_name}/#{id.to_s}", conditions, self.jsonapi_args)
+                  result = self.adapter.get("#{self.resource_name}/#{id.to_s}", conditions)
                   jsonapi_result_to_instance(result[:data], result)
                 end
 
                 def get_all(condition)
                   got = []
-                  result = self.adapter.get(self.resource_name, condition, self.jsonapi_args)
+                  result = self.adapter.get(self.resource_name, condition)
+                  if result
+                    got = result[:data].map do |item|
+                      data = { data: item }
+                      data.merge(included: result[:included]) if result[:included]
+                      jsonapi_result_to_instance(item, data)
+                    end
+                  end
+                  got
+                end
+
+                def get_all_explicit(exp_accounting_schema, exp_accounting_prefix, condition)
+                  got = []
+                  result = self.adapter.get_explicit!(exp_accounting_schema, exp_accounting_prefix, self.resource_name, condition)
                   if result
                     got = result[:data].map do |item|
                       data = { data: item }
@@ -123,7 +141,7 @@ module SP
 
             def destroy!
               if !new_record?
-                self.class.adapter.delete(path_for_id, self.class.jsonapi_args)
+                self.class.adapter.delete(path_for_id)
               end
             end
 
@@ -145,7 +163,7 @@ module SP
                   }
                 }
               end
-              result = self.class.adapter.post(self.class.resource_name, params, self.class.jsonapi_args)
+              result = self.class.adapter.post(self.class.resource_name, params)
               # Set the id to the newly created id
               self.id = result[:data][:id]
             end
@@ -158,7 +176,7 @@ module SP
                   attributes: get_persistent_json.reject { |k,v| k == :id }
                 }
               }
-              result = self.class.adapter.patch(path_for_id, params, self.class.jsonapi_args)
+              result = self.class.adapter.patch(path_for_id, params)
             end
 
             def get_persistent_json

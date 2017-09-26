@@ -23,31 +23,29 @@ module SP
 
             def get_error_response(path, error) ; error_response(path, error).to_json ; end
 
-            def do_request(method, path, params, jsonapi_args)
-              result = do_request_on_the_db(method, path, params, jsonapi_args)
-              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
-              [
-                SP::Duh::JSONAPI::Status::OK,
-                result
-              ]
+            def do_request(method, path, param)
+              process_result(do_request_on_the_db(method, path, params))
+            end
+
+            def explicit_do_request(accounting_schema, method, path, param)
+              process_result(explicit_do_request_on_the_db(accounting_schema, method, path, params))
             end
 
           private
-            def valid_keys
-              [:prefix, :user_id, :company_id, :company_schema, :sharded_schema, :accounting_schema, :accounting_prefix, :accounting_schema_for_fiscal_years]
+            def user_id           ; "'#{service.parameters.user_id}'" ; end
+            def company_id        ; "'#{service.parameters.company_id}'" ; end
+            def company_schema    ; service.parameters.company_schema.nil? ? 'NULL' : "'#{service.parameters.company_schema}'" ; end
+            def sharded_schema    ; service.parameters.sharded_schema.nil? ? 'NULL' : "'#{service.parameters.sharded_schema}'" ; end
+            def accounting_schema ; service.parameters.accounting_schema.nil? ? 'NULL' : "'#{service.parameters.accounting_schema}'" ; end
+            def accounting_prefix ; service.parameters.accounting_prefix.nil? ? 'NULL' : "'#{service.parameters.accounting_prefix}'" ; end
+
+            def process_result(result)
+              raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
+              [ SP::Duh::JSONAPI::Status::OK, result ]
             end
 
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
-            def do_request_on_the_db(method, path, params, jsonapi_args)
-              check_jsonapi_args(jsonapi_args)
-
-              user_id           = "'#{jsonapi_args[:user_id]}'"
-              company_id        = "'#{jsonapi_args[:company_id]}'"
-              company_schema    = jsonapi_args[:company_schema].nil? ? 'NULL' : "'#{jsonapi_args[:company_schema]}'"
-              sharded_schema    = jsonapi_args[:sharded_schema].nil? ? 'NULL' : "'#{jsonapi_args[:sharded_schema]}'"
-              accounting_schema = jsonapi_args[:accounting_schema].nil? ? 'NULL' : "'#{jsonapi_args[:accounting_schema]}'"
-              accounting_prefix = jsonapi_args[:accounting_prefix].nil? ? 'NULL' : "'#{jsonapi_args[:accounting_prefix]}'"
-
+            def do_request_on_the_db(method, path, params)
               jsonapi_query = if method == 'GET'
                 %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{accounting_schema}, #{accounting_prefix}) ]
               else
@@ -57,14 +55,20 @@ module SP
               response.first if response.first
             end
 
-            def is_error?(result) ; result =~ /^\s*{\s*"errors"\s*:/ ; end
+            def explicit_do_request_on_the_db(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+              _accounting_schema = "'#{exp_accounting_schema}'"
+              _accounting_prefix = "'#{exp_accounting_prefix}'"
 
-            def check_jsonapi_args(jsonapi_args)
-              if jsonapi_args.keys.any? && !(jsonapi_args.keys - valid_keys).empty?
-                raise SP::Duh::JSONAPI::Exceptions::InvalidJSONAPIKeyError.new(key: (jsonapi_args.keys - valid_keys).join(', '))
+              jsonapi_query = if method == 'GET'
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
+              else
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
               end
+              response = service.connection.exec jsonapi_query
+              response.first if response.first
             end
 
+            def is_error?(result) ; result =~ /^\s*{\s*"errors"\s*:/ ; end
         end
 
       end
