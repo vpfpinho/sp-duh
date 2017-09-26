@@ -27,6 +27,10 @@ module SP
 
               def find!(id, conditions = nil) ; get(id, conditions) ; end
 
+              def find_explicit!(exp_accounting_schema, exp_accounting_prefix, id, conditions = nil)
+                get_explicit(exp_accounting_schema, exp_accounting_prefix, id, conditions)
+              end
+
               def find(id, conditions = nil)
                 begin
                   get(id, conditions)
@@ -36,6 +40,7 @@ module SP
               end
 
               def query!(condition) ; get_all(condition) ; end
+              def query_explicit!(exp_accounting_schema, exp_accounting_prefix, condition) ; get_all_explicit(exp_accounting_schema, exp_accounting_prefix, condition) ; end
 
               def query(condition)
                 begin
@@ -71,6 +76,11 @@ module SP
 
               private
 
+                def get_explicit(exp_accounting_schema, exp_accounting_prefix, id, conditions = nil)
+                  result = self.adapter.get_explicit!(exp_accounting_schema, exp_accounting_prefix, "#{self.resource_name}/#{id.to_s}", conditions)
+                  jsonapi_result_to_instance(result[:data], result)
+                end
+
                 def get(id, conditions = nil)
                   result = self.adapter.get("#{self.resource_name}/#{id.to_s}", conditions)
                   jsonapi_result_to_instance(result[:data], result)
@@ -79,6 +89,19 @@ module SP
                 def get_all(condition)
                   got = []
                   result = self.adapter.get(self.resource_name, condition)
+                  if result
+                    got = result[:data].map do |item|
+                      data = { data: item }
+                      data.merge(included: result[:included]) if result[:included]
+                      jsonapi_result_to_instance(item, data)
+                    end
+                  end
+                  got
+                end
+
+                def get_all_explicit(exp_accounting_schema, exp_accounting_prefix, condition)
+                  got = []
+                  result = self.adapter.get_explicit!(exp_accounting_schema, exp_accounting_prefix, self.resource_name, condition)
                   if result
                     got = result[:data].map do |item|
                       data = { data: item }
