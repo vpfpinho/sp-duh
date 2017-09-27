@@ -7,8 +7,8 @@ module SP
         def initialize(parameters = {})
           check_jsonapi_args(parameters)
 
-          @user_id                   = parameters[:user_id]                   unless parameters[:user_id].nil?
-          @company_id                = parameters[:company_id]                unless parameters[:company_id].nil?
+          @user_id                   = parameters[:user_id].to_s              unless parameters[:user_id].nil?
+          @company_id                = parameters[:company_id].to_s           unless parameters[:company_id].nil?
           @company_schema            = parameters[:company_schema]            unless parameters[:company_schema].nil?
           @sharded_schema            = parameters[:sharded_schema]            unless parameters[:sharded_schema].nil?
           @default_accounting_schema = parameters[:default_accounting_schema] unless parameters[:default_accounting_schema].nil?
