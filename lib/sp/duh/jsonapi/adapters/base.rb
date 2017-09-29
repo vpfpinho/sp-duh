@@ -11,41 +11,89 @@ module SP
             @service = service
           end
 
-          def request(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
-            begin
-              do_request(path, schema, prefix, params, method, sharded_schema)
-            rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
-              [
-                e.status,
-                e.result
-              ]
-            rescue Exception => e
-              [
-                SP::Duh::JSONAPI::Status::ERROR,
-                get_error_response(path, e)
-              ]
-            end
+          def get(path, params = {})
+            request('GET', path, params)
+          end
+          def post(path, params = {})
+            request('POST', path, params)
+          end
+          def patch(path, params = {})
+            request('PATCH', path, params)
+          end
+          def delete(path)
+            request('DELETE', path, nil)
           end
 
-          def request!(path, schema = '', prefix = '', params = nil, method = 'GET', sharded_schema = nil)
-            do_request(path, schema, prefix, params, method, sharded_schema)
+          def get!(path, params = {})
+            request!('GET', path, params)
+          end
+          def post!(path, params = {})
+            request!('POST', path, params)
+          end
+          def patch!(path, params = {})
+            request!('PATCH', path, params)
+          end
+          def delete!(path)
+            request!('DELETE', path, nil)
           end
 
-          def get(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete(path, schema = '', prefix = '', sharded_schema = nil) ; request(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
-
-          def get!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'GET', sharded_schema) ; end
-          def post!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'POST', sharded_schema) ; end
-          def patch!(path, schema = '', prefix = '', params = nil, sharded_schema = nil) ; request!(path, schema, prefix, params, 'PATCH', sharded_schema) ; end
-          def delete!(path, schema = '', prefix = '', sharded_schema = nil) ; request!(path, schema, prefix, nil, 'DELETE', sharded_schema) ; end
+          def get_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
+            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'GET', path, params)
+          end
+          def post_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
+            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'POST', path, params)
+          end
+          def patch_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
+            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'PATCH', path, params)
+          end
+          def delete_explicit!(exp_accounting_schema, exp_accounting_prefix, path)
+            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'DELETE', path, nil)
+          end
 
           alias_method :put, :patch
           alias_method :put!, :patch!
+          alias_method :put_explicit!, :patch_explicit!
 
           def unwrap_request
             unwrap_response(yield)
+          end
+
+          # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
+          def do_request(method, path, params) ; ; end
+          def explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params) ; ; end
+
+          def request(method, path, params)
+            # As it is now, this method is EXACTLY the same as request!()
+            # And it cannot be reverted without affecting lots of changes already made in the app's controllers.
+            # TODO: end it, or end the !() version
+            # begin
+              unwrap_request do
+                do_request(method, path, params)
+              end
+            # THIS CAN'T BE DONE, because the same method cannot return both a single result (in case there is NOT an error) and a pair (in case there IS an error)
+            # rescue SP::Duh::JSONAPI::Exceptions::GenericModelError => e
+            #   [
+            #     e.status,
+            #     e.result
+            #   ]
+            # rescue Exception => e
+            #   [
+            #     SP::Duh::JSONAPI::Status::ERROR,
+            #     get_error_response(path, e)
+            #   ]
+            # end
+          end
+
+          def request!(method, path, params)
+            unwrap_request do
+              do_request(method, path, params)
+            end
+          end
+
+          def explicit_request!(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+            unwrap_request do
+              explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+            end
           end
 
           protected
@@ -63,11 +111,11 @@ module SP
                 case
                   when params.is_a?(Array)
                     # query = params.join('&')
-                    query = params.map{ |v| URI.encode(v).gsub("'","''") }.join('&')
+                    query = params.map{ |v| URI.encode(URI.encode(v).gsub("'","''"), "&") }.join('&')
                   when params.is_a?(Hash)
                     query = params.map do |k,v|
                       if v.is_a?(String)
-                        "#{k}=\"#{URI.encode(v).gsub("'","''")}\""
+                        "#{k}=\"#{URI.encode(URI.encode(v).gsub("'","''"), "&")}\""
                       else
                         "#{k}=#{v}"
                       end
@@ -83,14 +131,17 @@ module SP
               params.blank? ?  '' : params.to_json.gsub("'","''")
             end
 
-            # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
-            def do_request(path, schema, prefix, params, method, sharded_schema = nil) ; ; end
-
             # unwrap_response SHOULD be implemented by each specialized adapter, and returns the request result as a JSONAPI string or hash and raises an exception if there was an error
             def unwrap_response(response)
-              status = response[0]
-              result = response[1]
-              result
+              # As the method request() is EXACTLY the same as request!(), and it cannot be reverted without affecting lots of changes already made in the app's controllers...
+              # Allow for response being both a [ status, result ] pair (as of old) OR a single result (as of now)
+              if response.is_a?(Array)
+                status = response[0].to_i
+                result = response[1]
+                result
+              else
+                response
+              end
             end
 
             def error_response(path, error)
@@ -108,6 +159,7 @@ module SP
 
             # get_error_response MUST be implemented by each specialized adapter, and returns a JSONAPI error result as a string or hash
             def get_error_response(path, error) ; ; end
+
         end
 
       end

@@ -80,11 +80,14 @@ BEGIN
     ';
     EXECUTE query INTO all_table_prefixes;
 
-    EXECUTE
-      FORMAT('
-        UPDATE %1$s.info
-        SET fiscal_years = ''%2$s''
-      ', meta_schema, all_table_prefixes);
+    -- The company may have no fiscal years!!!!
+    IF all_table_prefixes IS NOT NULL THEN
+      EXECUTE
+        FORMAT('
+          UPDATE %1$s.info
+          SET fiscal_years = ''%2$s''
+        ', meta_schema, all_table_prefixes);
+    END IF;
   END IF;
 
   -- Backup all foreign records

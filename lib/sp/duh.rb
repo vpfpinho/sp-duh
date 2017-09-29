@@ -7,6 +7,8 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'repl'))
 
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'exceptions'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'resource_publisher'))
+# Parameters class
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'parameters'))
 # Service classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'service'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'configuration'))
@@ -28,6 +30,12 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'migrations', 
 # Backup and restore (transfer) library classes
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'backup'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'db', 'transfer', 'restore'))
+
+# API documentationlibrary classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'jsonapi', 'doc', 'generator'))
+
+# i18n classes
+require File.expand_path(File.join(File.dirname(__FILE__), 'duh', 'i18n', 'excel_loader'))
 
 # SP helper lib
 require 'sp-excel-loader'
