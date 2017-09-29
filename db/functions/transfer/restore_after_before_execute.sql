@@ -186,6 +186,10 @@ BEGIN
       SELECT array_agg(table_prefix) from %1$s.fiscal_years
     ', accounting_schema_template)
     INTO STRICT excluded_prefixes;
+    -- Warning: company may have no fiscal years yet!
+    IF excluded_prefixes IS NULL THEN
+      excluded_prefixes := '{}';
+    END IF;
     FOREACH accounting_schema IN ARRAY source_info.accounting_schemas LOOP
       RAISE NOTICE 'Creating (global) tables in schema %', accounting_schema;
       PERFORM transfer.create_shard_tables(accounting_schema_template, accounting_schema, '', '', excluded_prefixes);
