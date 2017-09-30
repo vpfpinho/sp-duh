@@ -8,10 +8,12 @@
 module SP
   module Duh
     module JSONAPI
+
       module ResourcePublisher
         extend ::ActiveSupport::Concern
 
         included do
+          SP::Duh::JSONAPI::Configuration.add_publisher self
         end
 
         module ClassMethods

@@ -7,6 +7,8 @@ module SP
         CONFIGURATION_TABLE_NAME = 'public.jsonapi_config'
         DEFAULT_SETTINGS_FILE = 'config/jsonapi/settings.yml'
 
+        @@publishers = []
+
         def settings
           @settings ||= {}
           if @settings.blank?
@@ -24,19 +26,18 @@ module SP
         def connection ; @pg_connection ; end
         def url ; @url ; end
 
-        def publishers ; @publishers || [] ; end
+        def publishers ; @@publishers || [] ; end
 
         def initialize(pg_connection, url)
           @pg_connection = pg_connection
           @url = url
-          @publishers = []
         end
 
-        def add_publisher(publisher)
+        def self.add_publisher(publisher)
           begin
             publisher = publisher.constantize if publisher.is_a?(String)
             raise Exceptions::InvalidResourcePublisherError.new(publisher: publisher.name) if !publisher.include?(ResourcePublisher)
-            @publishers << publisher
+            @@publishers << publisher
           rescue StandardError => e
             raise Exceptions::InvalidResourcePublisherError.new(publisher: publisher.is_a?(String) ? publisher : publisher.name)
           end
@@ -70,7 +71,7 @@ module SP
         def load_from_publishers(replace = false)
           @resources = []
           @settings = {}
-          @publishers.each do |publisher|
+          @@publishers.each do |publisher|
              add_resources_from_folder(publisher.jsonapi_resources_root, replace)
           end
           @resources
