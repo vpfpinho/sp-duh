@@ -139,9 +139,23 @@ module SP
               end
             end
 
+            def save_explicit!(exp_accounting_schema, exp_accounting_prefix)
+              if new_record?
+                create_explicit!(exp_accounting_schema, exp_accounting_prefix)
+              else
+                update_explicit!(exp_accounting_schema, exp_accounting_prefix)
+              end
+            end
+
             def destroy!
               if !new_record?
                 self.class.adapter.delete(path_for_id)
+              end
+            end
+
+            def destroy_explicit!(exp_accounting_schema, exp_accounting_prefix)
+              if !new_record?
+                self.class.adapter.delete_explicit!(exp_accounting_schema, exp_accounting_prefix, path_for_id)
               end
             end
 
