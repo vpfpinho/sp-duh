@@ -4,19 +4,20 @@ CREATE OR REPLACE FUNCTION transfer.restore_after_execute(
   template_company_id   bigint
 ) RETURNS VOID AS $BODY$
 DECLARE
-  meta_schema                 text;
-  source_info                 RECORD;
-  query                       text;
-  schema                      text;
-  main_schema_template        text;
-  accounting_schema_template  text;
-  fiscal_year_template        text;
-  accounting_schema           text;
-  prefixes                    JSON;
-  prefix                      text;
-  excluded_prefixes           text[];
-  schema_templates            text[];
-  schemas                     text[];
+  meta_schema                         text;
+  source_info                         RECORD;
+  query                               text;
+  schema                              text;
+  main_schema_template                text;
+  accounting_schema_template          text;
+  fiscal_year_template                text;
+  accounting_schema                   text;
+  prefixes                            JSON;
+  prefix                              text;
+  excluded_prefixes                   text[];
+  schema_templates                    text[];
+  schemas                             text[];
+  template_tax_registration_number    text;
 BEGIN
 
   -- Assert that the company was restored and is valid!
@@ -31,7 +32,7 @@ BEGIN
   INTO STRICT source_info;
 
   SELECT * FROM transfer.get_restore_templates(company_id, template_company_id)
-  INTO main_schema_template, accounting_schema_template, fiscal_year_template;
+  INTO main_schema_template, accounting_schema_template, fiscal_year_template, template_tax_registration_number;
 
   -----------------------------------------------------------------------------------------------
   -- Create the CONSTRAINTS, INDEXES, FOREIGN KEYS AND TRIGGERS for the tables being restored  --
