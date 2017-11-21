@@ -7,22 +7,23 @@ CREATE OR REPLACE FUNCTION transfer.restore_after_before_execute(
   schema_name                 text
 ) AS $BODY$
 DECLARE
-  meta_schema                 text;
-  source_info                 RECORD;
-  destination_schema_version  text;
-  foreign_table               RECORD;
-  query                       text;
-  schema                      text;
-  columns_list                text;
-  main_schema_template        text;
-  accounting_schema_template  text;
-  fiscal_year_template        text;
-  accounting_schema           text;
-  prefixes                    JSON;
-  prefix                      text;
-  excluded_prefixes           text[];
-  has_fiscal_years            boolean;
-  company_accountant_id       bigint;
+  meta_schema                         text;
+  source_info                         RECORD;
+  destination_schema_version          text;
+  foreign_table                       RECORD;
+  query                               text;
+  schema                              text;
+  columns_list                        text;
+  main_schema_template                text;
+  accounting_schema_template          text;
+  fiscal_year_template                text;
+  accounting_schema                   text;
+  prefixes                            JSON;
+  prefix                              text;
+  excluded_prefixes                   text[];
+  has_fiscal_years                    boolean;
+  company_accountant_id               bigint;
+  template_tax_registration_number    text;
 BEGIN
 
   -- Validate the company's info
@@ -63,7 +64,7 @@ BEGIN
   -- Assert that there are avaliable templates to build the company in the destination database
 
   SELECT * FROM transfer.get_restore_templates(company_id, template_company_id)
-  INTO main_schema_template, accounting_schema_template, fiscal_year_template;
+  INTO main_schema_template, accounting_schema_template, fiscal_year_template, template_tax_registration_number;
 
   has_fiscal_years := false;
   FOR accounting_schema, prefixes IN SELECT * FROM json_each(source_info.fiscal_years) LOOP
