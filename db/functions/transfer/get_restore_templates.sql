@@ -1,10 +1,11 @@
 DROP FUNCTION IF EXISTS transfer.get_restore_templates(bigint, bigint);
 CREATE OR REPLACE FUNCTION transfer.get_restore_templates(
-  IN  p_company_id                bigint,
-  IN  p_template_company_id       bigint,
-  OUT main_schema_template        text,
-  OUT accounting_schema_template  text,
-  OUT fiscal_year_template        text
+  IN  p_company_id                        bigint,
+  IN  p_template_company_id               bigint,
+  OUT main_schema_template                text,
+  OUT accounting_schema_template          text,
+  OUT fiscal_year_template                text,
+  OUT template_tax_registration_number    text
 )
 RETURNS record AS $BODY$
 BEGIN
@@ -12,7 +13,8 @@ BEGIN
   EXECUTE '
     SELECT
       c.schema_name::text,
-      a.schema_name::text
+      a.schema_name::text,
+      c.tax_registration_number::text
     FROM
       public.companies c
     LEFT JOIN
@@ -23,7 +25,7 @@ BEGIN
       c.id = $2
   '
   USING p_company_id, p_template_company_id
-  INTO main_schema_template, accounting_schema_template;
+  INTO main_schema_template, accounting_schema_template, template_tax_registration_number;
 
   fiscal_year_template := NULL;
   IF accounting_schema_template IS NOT NULL THEN
