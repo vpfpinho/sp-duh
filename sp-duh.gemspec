@@ -18,6 +18,9 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
+  spec.add_dependency 'highline'
+  spec.add_dependency 'sp-excel-loader'
+
   spec.add_development_dependency 'awesome_print', '~> 1.6'
   spec.add_development_dependency 'byebug', '~> 8.2'
 

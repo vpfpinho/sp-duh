@@ -5,6 +5,7 @@ def require_silently(require_name)
   end
 end
 
+require 'highline/import'
 require_silently 'byebug'
 require_silently 'awesome_print'
 
