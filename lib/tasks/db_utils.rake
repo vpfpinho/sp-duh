@@ -78,7 +78,7 @@ task :create_db => :production_safety do
     connect_to_pg()
     unless $db.nil?
       $db.close
-      nuke_db = ask('Are you sure? The current database will be destroyed!!!!') { |q| q.default = 'no' }
+      nuke_db = ask("Are you sure? The current database #{$db_config['database']} on #{$db_config['host']} will be destroyed!!!!") { |q| q.default = 'no' }
       if nuke_db.downcase == 'yes'
         %x[dropdb -p #{$db_config['port']} -U #{$db_config['username']} -h #{$db_config['host']} #{$db_config['database']}]
         raise 'dropdb failed, bailing out' unless $?.success?
@@ -94,5 +94,3 @@ task :create_db => :production_safety do
   load_db_from_yml_spec(YAML.load_file(File.join(MOD_PATH, 'config', 'db_functions.yml')))
   config_json_api()
 end
-
-
