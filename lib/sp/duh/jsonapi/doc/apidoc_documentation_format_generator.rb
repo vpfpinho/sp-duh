@@ -224,17 +224,17 @@ module SP
                 json << '        "data": ['
                 json << '          {'
                 json << '            "type": "' + get_type(attribute[:catalog]).sub('[]', '') + '",'
-                json << '            "id": ' + get_default_value_for_attribute(resource, i)
+                json << '            "id": "' + get_default_value_for_attribute(resource, i) + '"'
                 json << '          },'
                 json << '          {'
                 json << '            "type": "' + get_type(attribute[:catalog]).sub('[]', '') + '",'
-                json << '            "id": ' + (get_default_value_for_attribute(resource, i).to_i + 1).to_s
+                json << '            "id": "' + (get_default_value_for_attribute(resource, i).to_i + 1).to_s + '"'
                 json << '          }'
                 json << '        ],'
               else
                 json << '        "data": {'
                 json << '          "type": "' + get_type(attribute[:catalog]) + '",'
-                json << '          "id": ' + get_default_value_for_attribute(resource, i)
+                json << '          "id": "' + get_default_value_for_attribute(resource, i) + '"'
                 json << '        },'
               end
               delete_comma(json)
