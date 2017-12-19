@@ -6,27 +6,19 @@ def load_db_from_yml_spec (a_spec)
     Pathname.glob("#{MOD_PATH}/db/#{elem}/**/").sort.each do |folder|
       Dir["#{folder}/*.sql"].sort.each do |file|
         puts "file #{file}"
-         $db.exec( File.read(file) )
+        $db.exec( File.read(file) )
       end
-      # careful!!! we cannot execute automatically some functions on production
-      if !a_spec["execute"].nil? && a_spec["execute"].keys.include?(elem)
-        can_execute = false
-        statements = []
+    end
+  end
 
-        if a_spec["execute"][elem].is_a?(Array)
-          can_execute = true
-          statements = a_spec["execute"][elem]
-        elsif a_spec["execute"][elem].keys.include? folder.basename.to_s
-          can_execute = true
-          statements = a_spec["execute"][elem][folder.basename.to_s]
-        end
+  return if a_spec["execute"].nil?
 
-        if can_execute
-          statements.each do |to_execute|
-            $db.exec( "SELECT * FROM #{to_execute};" )
-          end
-        end
-      end
+  a_spec["folders"].each do |folder|
+    next unless a_spec["execute"].has_key?(folder)
+    next unless a_spec["execute"][folder].is_a?(Array)
+    a_spec["execute"][folder].each do |to_execute|
+      puts to_execute
+      $db.exec( "SELECT #{ to_execute};" )
     end
   end
 end
@@ -86,7 +78,7 @@ task :create_db => :production_safety do
     connect_to_pg()
     unless $db.nil?
       $db.close
-      nuke_db = ask('Are you sure? The current database will be destroyed!!!!') { |q| q.default = 'no' }
+      nuke_db = ask("Are you sure? The current database #{$db_config['database']} on #{$db_config['host']} will be destroyed!!!!") { |q| q.default = 'no' }
       if nuke_db.downcase == 'yes'
         %x[dropdb -p #{$db_config['port']} -U #{$db_config['username']} -h #{$db_config['host']} #{$db_config['database']}]
         raise 'dropdb failed, bailing out' unless $?.success?
@@ -102,5 +94,3 @@ task :create_db => :production_safety do
   load_db_from_yml_spec(YAML.load_file(File.join(MOD_PATH, 'config', 'db_functions.yml')))
   config_json_api()
 end
-
-
