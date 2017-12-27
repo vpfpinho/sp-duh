@@ -10,6 +10,8 @@ DECLARE
   _i18n_text text;
 BEGIN
 
+  -- RAISE DEBUG '====>  common.get_i18n(''%'',''%'',%)', key, locale, a_args;
+
   IF left(locale,2) NOT IN ('pt','en','es','fr','de','it') THEN
       RAISE EXCEPTION 'unknown language in i18n table'
           USING ERRCODE = 'JA001';
@@ -34,5 +36,8 @@ BEGIN
   END IF;
 
   RETURN _i18n_text;
+
+EXCEPTION WHEN OTHERS THEN
+  RAISE EXCEPTION 'common.get_i18n(''%'',''%'',%) - _i18n_text:[%] - %', key, locale, a_args, _i18n_text, SQLERRM USING ERRCODE = SQLSTATE;
 END;
 $BODY$ LANGUAGE plpgsql IMMUTABLE;
