@@ -14,7 +14,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
 
       end
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.100
+      sleep 0.050
     end
 
     # If migration add structural changes on public objects and want run migration
