@@ -39,6 +39,21 @@ module SP
           [ :user_id, :company_id, :company_schema, :sharded_schema, :default_accounting_schema, :accounting_schema, :accounting_prefix ]
         end
       end
+
+      class ParametersNotPicky < Parameters
+
+        def initialize (parameters)
+          @user_id                   = parameters[:user_id].to_s
+          @company_id                = parameters[:company_id].to_s
+          @company_schema            = parameters[:company_schema]
+          @sharded_schema            = parameters[:sharded_schema]
+          @default_accounting_schema = parameters[:default_accounting_schema]
+          @accounting_schema         = parameters[:accounting_schema]
+          @accounting_prefix         = parameters[:accounting_prefix]
+        end
+
+      end
+
     end
   end
 end
