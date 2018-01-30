@@ -9,7 +9,7 @@ GIT
 PATH
   remote: .
   specs:
-    sp-duh (2.0.15)
+    sp-duh (2.0.16)
       highline
       rails (~> 3.2)
       sp-excel-loader
