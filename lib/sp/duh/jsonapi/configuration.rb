@@ -94,7 +94,7 @@ module SP
         end
 
         def reload!
-          load_from_publishers(true)
+          load_from_publishers(false)
           save
           @resources
         end
