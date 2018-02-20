@@ -31,7 +31,7 @@ module SP
 
         def initialize(message = nil, nested = $!)
           if message.nil?
-            message = I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}") if I18n.exists?("sp-duh.exceptions.#{type.underscore.gsub('/','.')}")
+            message = ::I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}") if I18n.exists?("sp-duh.exceptions.#{type.underscore.gsub('/','.')}")
           end
           super(message)
           @nested = nested
@@ -60,7 +60,7 @@ module SP
 
       class GenericDetailedError < GenericError
         def initialize(details = {})
-          message = I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}", details)
+          message = ::I18n.t("sp-duh.exceptions.#{type.underscore.gsub('/','.')}", details)
           super(message)
         end
       end
