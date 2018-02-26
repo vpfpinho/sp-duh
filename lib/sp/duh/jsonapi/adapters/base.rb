@@ -50,6 +50,10 @@ module SP
             explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'DELETE', path, nil)
           end
 
+          def get_specific_service!(path, params, service_params)
+            specific_service_do_request!('GET', path, params, service_params)
+          end
+
           alias_method :put, :patch
           alias_method :put!, :patch!
           alias_method :put_explicit!, :patch_explicit!
@@ -93,6 +97,12 @@ module SP
           def explicit_request!(exp_accounting_schema, exp_accounting_prefix, method, path, params)
             unwrap_request do
               explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+            end
+          end
+
+          def specific_service_do_request!(method, path, params, service_params)
+            unwrap_request do
+              specific_service_do_request(method, path, params, service_params)
             end
           end
 
