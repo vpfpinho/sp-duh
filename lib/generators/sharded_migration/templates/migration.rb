@@ -1,11 +1,10 @@
 class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
   def up
     # If migration add structural changes on public objects and want run migration
-    # without a full deploy, please uncomment the next line
-    # this is not the best way to grant this, but it will work for sure...
-    # execute %Q[ drop function sharding.create_company_shard ( integer, text, sharding.sharding_triggered_by); ]
+    # without a full deploy, please uncomment the next line (this is not the best way to grant this, but it will work for sure...)
+    # execute %Q[ DROP FUNCTION IF EXISTS sharding.create_company_shard ( integer, text, sharding.sharding_triggered_by); ]
 
-    migrate_companies do |schema_name, company_id|
+    migrate_companies do |schema_name, company_id, use_sharded_company, tablespace_name|
       case schema_name
         when 'public'
           # Code to run on "public" schema
@@ -28,7 +27,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
   end
 
   def down
-    rollback_companies do |schema_name, company_id|
+    rollback_companies do |schema_name, company_id, use_sharded_company, tablespace_name|
       case schema_name
         when 'public'
           # Code to run on "public" schema
