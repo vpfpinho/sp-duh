@@ -1,15 +1,15 @@
 GIT
   remote: git@github.com:vpfpinho/sp-excel-loader.git
-  revision: be765a5edaeac7b012bb3440d7fb96ab9160adce
+  revision: 086a224b0425e41df0d439f3a42fa0e8bfebe588
   specs:
-    sp-excel-loader (0.3.41)
+    sp-excel-loader (0.3.42)
       json
-      rubyXL (= 3.3.23)
+      rubyXL
 
 PATH
   remote: .
   specs:
-    sp-duh (2.0.26)
+    sp-duh (2.0.29)
       highline
       rails (~> 3.2)
       sp-excel-loader
@@ -107,7 +107,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.5.0)
     rspec-support (3.5.0)
-    rubyXL (3.3.23)
+    rubyXL (3.3.29)
       nokogiri (>= 1.4.4)
       rubyzip (>= 1.1.6)
     rubyzip (1.2.1)
