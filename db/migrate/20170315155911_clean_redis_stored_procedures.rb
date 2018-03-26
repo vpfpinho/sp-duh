@@ -8,6 +8,7 @@ class CleanRedisStoredProcedures < ActiveRecord::Migration
     execute %Q[DROP FUNCTION IF EXISTS redis.trf_mark_optimizations_cache_entries_for_deletion();]
 
     execute %Q[DROP SCHEMA IF EXISTS redis;]
+    execute %Q[DROP EXTENSION IF EXISTS redis_fdw;]
   end
 
   def down
