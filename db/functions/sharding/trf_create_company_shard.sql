@@ -4,7 +4,15 @@ CREATE OR REPLACE FUNCTION sharding.trf_create_company_shard()
 RETURNS TRIGGER AS $BODY$
 DECLARE
   old_search_path text;
+  _current_cluster integer;
 BEGIN
+
+  SHOW cloudware.cluster INTO _current_cluster;
+  IF _current_cluster IS DISTINCT FROM NEW.cluster THEN
+    RAISE DEBUG 'Ignoring company for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
+    RETURN NEW;
+  END IF;
+
   RAISE NOTICE 'Sharding company [%] % - % - %', NEW.id, NEW.tax_registration_number, COALESCE(NEW.business_name, NEW.company_name, '<unnamed>'), NEW.use_sharded_company;
 
   IF NEW.use_sharded_company THEN
