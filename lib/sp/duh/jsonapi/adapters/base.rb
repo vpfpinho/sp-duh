@@ -112,7 +112,8 @@ module SP
 
             def url_with_params_for_query(path, params)
               query = params_for_query(params)
-              query.blank? ? url(path) : url(path) + "?" + query
+              query_url = url(path)
+              query.blank? ? query_url : query_url + (query_url.include?('?') ? '&' : '?') + query
             end
 
             def params_for_query(params)
