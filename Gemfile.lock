@@ -9,7 +9,7 @@ GIT
 PATH
   remote: .
   specs:
-    sp-duh (2.0.31)
+    sp-duh (2.0.33)
       highline
       rails (~> 3.2)
       sp-excel-loader
@@ -91,7 +91,7 @@ GEM
       rake (>= 0.8.7)
       rdoc (~> 3.4)
       thor (>= 0.14.6, < 2.0)
-    rake (12.3.0)
+    rake (12.3.1)
     rdoc (3.12.2)
       json (~> 1.4)
     rspec (3.5.0)
@@ -125,7 +125,7 @@ GEM
     treetop (1.4.15)
       polyglot
       polyglot (>= 0.3.1)
-    tzinfo (0.3.53)
+    tzinfo (0.3.54)
 
 PLATFORMS
   ruby

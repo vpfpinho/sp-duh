@@ -204,7 +204,7 @@ module SP
             end
 
             def get_persistent_json
-              as_json.reject { |k| !self.class.attributes.include?(k) || self.class.non_persistent_attributes.include?(k) }
+              as_json.reject { |k| !self.class.attributes.include?(k) || (self.class.non_persistent_attributes || []).include?(k) }
             end
 
             protected
