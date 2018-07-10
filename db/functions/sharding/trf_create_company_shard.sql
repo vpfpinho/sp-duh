@@ -7,7 +7,7 @@ DECLARE
   _current_cluster integer;
 BEGIN
 
-  SHOW cloudware.cluster INTO _current_cluster; -- EXCEPTION if parameter is not set
+  SHOW cloudware.cluster INTO _current_cluster;
 
   IF NEW.use_sharded_company THEN
     IF NULLIF(NEW.schema_name,'') IS NULL THEN
