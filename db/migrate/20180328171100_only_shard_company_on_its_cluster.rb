@@ -16,7 +16,7 @@ class OnlyShardCompanyOnItsCluster < ActiveRecord::Migration
           END IF;
 
           IF _current_cluster IS DISTINCT FROM NEW.cluster THEN
-            RAISE DEBUG 'Ignoring company for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
+            RAISE WARNING 'Ignoring company for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
             RETURN NEW;
           END IF;
 
