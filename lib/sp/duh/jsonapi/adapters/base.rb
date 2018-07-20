@@ -37,17 +37,17 @@ module SP
             request!('DELETE', path, nil)
           end
 
-          def get_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
-            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'GET', path, params)
+          def get_explicit!(exp_subentity_schema, exp_subentity_prefix, path, params = {})
+            explicit_request!(exp_subentity_schema, exp_subentity_prefix, 'GET', path, params)
           end
-          def post_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
-            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'POST', path, params)
+          def post_explicit!(exp_subentity_schema, exp_subentity_prefix, path, params = {})
+            explicit_request!(exp_subentity_schema, exp_subentity_prefix, 'POST', path, params)
           end
-          def patch_explicit!(exp_accounting_schema, exp_accounting_prefix, path, params = {})
-            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'PATCH', path, params)
+          def patch_explicit!(exp_subentity_schema, exp_subentity_prefix, path, params = {})
+            explicit_request!(exp_subentity_schema, exp_subentity_prefix, 'PATCH', path, params)
           end
-          def delete_explicit!(exp_accounting_schema, exp_accounting_prefix, path)
-            explicit_request!(exp_accounting_schema, exp_accounting_prefix, 'DELETE', path, nil)
+          def delete_explicit!(exp_subentity_schema, exp_subentity_prefix, path)
+            explicit_request!(exp_subentity_schema, exp_subentity_prefix, 'DELETE', path, nil)
           end
 
           def get_specific_service!(path, params, service_params)
@@ -64,7 +64,7 @@ module SP
 
           # do_request MUST be implemented by each specialized adapter, and returns a tuple: the request status and a JSONAPI string or hash with the result
           def do_request(method, path, params) ; ; end
-          def explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params) ; ; end
+          def explicit_do_request(exp_subentity_schema, exp_subentity_prefix, method, path, params) ; ; end
 
           def request(method, path, params)
             # As it is now, this method is EXACTLY the same as request!()
@@ -94,9 +94,9 @@ module SP
             end
           end
 
-          def explicit_request!(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+          def explicit_request!(exp_subentity_schema, exp_subentity_prefix, method, path, params)
             unwrap_request do
-              explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params)
+              explicit_do_request(exp_subentity_schema, exp_subentity_prefix, method, path, params)
             end
           end
 

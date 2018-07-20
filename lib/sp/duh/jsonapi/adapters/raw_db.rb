@@ -27,8 +27,8 @@ module SP
               process_result(do_request_on_the_db(method, path, params))
             end
 
-            def explicit_do_request(exp_accounting_schema, exp_accounting_prefix, method, path, params)
-              process_result(explicit_do_request_on_the_db(exp_accounting_schema, exp_accounting_prefix, method, path, params))
+            def explicit_do_request(exp_subentity_schema, exp_subentity_prefix, method, path, params)
+              process_result(explicit_do_request_on_the_db(exp_subentity_schema, exp_subentity_prefix, method, path, params))
             end
 
             def specific_service_do_request(method, path, params, service_params)
@@ -36,12 +36,12 @@ module SP
             end
 
           private
-            def user_id           ; "'#{service.parameters.user_id}'" ; end
-            def company_id        ; "'#{service.parameters.company_id}'" ; end
-            def company_schema    ; service.parameters.company_schema.nil? ? 'NULL' : "'#{service.parameters.company_schema}'" ; end
-            def sharded_schema    ; service.parameters.sharded_schema.nil? ? 'NULL' : "'#{service.parameters.sharded_schema}'" ; end
-            def accounting_schema ; service.parameters.accounting_schema.nil? ? 'NULL' : "'#{service.parameters.accounting_schema}'" ; end
-            def accounting_prefix ; service.parameters.accounting_prefix.nil? ? 'NULL' : "'#{service.parameters.accounting_prefix}'" ; end
+            def user_id          ; "'#{service.parameters.user_id}'" ; end
+            def entity_id        ; "'#{service.parameters.entity_id}'" ; end
+            def entity_schema    ; service.parameters.entity_schema.nil? ? 'NULL' : "'#{service.parameters.entity_schema}'" ; end
+            def sharded_schema   ; service.parameters.sharded_schema.nil? ? 'NULL' : "'#{service.parameters.sharded_schema}'" ; end
+            def subentity_schema ; service.parameters.subentity_schema.nil? ? 'NULL' : "'#{service.parameters.subentity_schema}'" ; end
+            def subentity_prefix ; service.parameters.subentity_prefix.nil? ? 'NULL' : "'#{service.parameters.subentity_prefix}'" ; end
 
             def process_result(result)
               raise SP::Duh::JSONAPI::Exceptions::GenericModelError.new(result) if is_error?(result)
@@ -51,39 +51,39 @@ module SP
             # Implement the JSONAPI request by direct querying of the JSONAPI function in the database
             def do_request_on_the_db(method, path, params)
               jsonapi_query = if method == 'GET'
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{accounting_schema}, #{accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{entity_id}, #{entity_schema}, #{sharded_schema}, #{subentity_schema}, #{subentity_prefix}) ]
               else
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{accounting_schema}, #{accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{user_id}, #{entity_id}, #{entity_schema}, #{sharded_schema}, #{subentity_schema}, #{subentity_prefix}) ]
               end
               response = service.connection.exec jsonapi_query
               response.first if response.first
             end
 
-            def explicit_do_request_on_the_db(exp_accounting_schema, exp_accounting_prefix, method, path, params)
-              _accounting_schema = "'#{exp_accounting_schema}'"
-              _accounting_prefix = "'#{exp_accounting_prefix}'"
+            def explicit_do_request_on_the_db(exp_subentity_schema, exp_subentity_prefix, method, path, params)
+              _subentity_schema = "'#{exp_subentity_schema}'"
+              _subentity_prefix = "'#{exp_subentity_prefix}'"
 
               jsonapi_query = if method == 'GET'
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{user_id}, #{entity_id}, #{entity_schema}, #{sharded_schema}, #{_subentity_schema}, #{_subentity_prefix}) ]
               else
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{user_id}, #{company_id}, #{company_schema}, #{sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{user_id}, #{entity_id}, #{entity_schema}, #{sharded_schema}, #{_subentity_schema}, #{_subentity_prefix}) ]
               end
               response = service.connection.exec jsonapi_query
               response.first if response.first
             end
 
             def specific_service_do_request_on_the_db(method, path, params, service_params)
-              _user_id           = "'"+service_params["user_id"]+"'"
-              _company_id        = "'"+service_params["company_id"]+"'"
-              _company_schema    = service_params["company_schema"].blank? ? 'NULL' : "'"+service_params["company_schema"]+"'"
-              _sharded_schema    = service_params["sharded_schema"].blank? ? 'NULL' : "'"+service_params["sharded_schema"]+"'"
-              _accounting_schema = service_params["accounting_schema"].blank? ? 'NULL' : "'"+service_params["accounting_schema"]+"'"
-              _accounting_prefix = service_params["accounting_prefix"].blank? ? 'NULL' : "'"+service_params["accounting_prefix"]+"'"
+              _user_id          = "'"+service_params["user_id"]+"'"
+              _entity_id        = "'"+service_params["entity_id"]+"'"
+              _entity_schema    = service_params["entity_schema"].blank? ? 'NULL' : "'"+service_params["entity_schema"]+"'"
+              _sharded_schema   = service_params["sharded_schema"].blank? ? 'NULL' : "'"+service_params["sharded_schema"]+"'"
+              _subentity_schema = service_params["subentity_schema"].blank? ? 'NULL' : "'"+service_params["subentity_schema"]+"'"
+              _subentity_prefix = service_params["subentity_prefix"].blank? ? 'NULL' : "'"+service_params["subentity_prefix"]+"'"
 
               jsonapi_query = if method == 'GET'
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{_user_id}, #{_company_id}, #{_company_schema}, #{_sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url_with_params_for_query(path, params)}', '', #{_user_id}, #{_entity_id}, #{_entity_schema}, #{_sharded_schema}, #{_subentity_schema}, #{_subentity_prefix}) ]
               else
-                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{_user_id}, #{_company_id}, #{_company_schema}, #{_sharded_schema}, #{_accounting_schema}, #{_accounting_prefix}) ]
+                %Q[ SELECT * FROM public.jsonapi('#{method}', '#{url(path)}', '#{params_for_body(params)}', #{_user_id}, #{_entity_id}, #{_entity_schema}, #{_sharded_schema}, #{_subentity_schema}, #{_subentity_prefix}) ]
               end
               response = service.connection.exec jsonapi_query
               response.first if response.first
