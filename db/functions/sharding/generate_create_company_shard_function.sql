@@ -20,7 +20,7 @@ DECLARE
 
   queries TEXT[];
   query TEXT;
-  before_query TEXT;
+  before_queries TEXT[];
   after_queries TEXT[];
   p_destination_schema_name TEXT;
   shard_company_id TEXT;
@@ -148,7 +148,7 @@ BEGIN
   FOR qualified_object_name, object_data IN SELECT * FROM jsonb_each(all_objects_data) LOOP
     -- Reset variables
     aux := NULL;
-    before_query := NULL;
+    before_queries := '{}';
     after_queries := '{}';
 
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
@@ -170,7 +170,7 @@ BEGIN
 
         col_default_value := format('nextval(''%1$s.%2$s''::regclass)', p_destination_schema_name, aux);
 
-        before_query := format('CREATE SEQUENCE %1$s.%2$I;', p_destination_schema_name, aux);
+        before_queries := before_queries || format('CREATE SEQUENCE %1$s.%2$I;', p_destination_schema_name, aux);
         after_queries := after_queries
                       || format('ALTER SEQUENCE %1$s.%2$I OWNED BY %1$s.%3$I.%4$I;', p_destination_schema_name, aux, object_name, json_object->>'name')
                       || format('EXECUTE ''SELECT last_value + 1 FROM public.%1$I'' INTO seq_nextval;', aux)
@@ -199,8 +199,8 @@ BEGIN
       query := query || ');';
     END IF;
 
-    IF before_query IS NOT NULL THEN
-      queries := queries || before_query;
+    IF before_queries IS NOT NULL THEN
+      queries := queries || before_queries;
     END IF;
 
     queries := queries || query || after_queries;
