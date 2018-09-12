@@ -34,8 +34,8 @@ url = jsonapi_configuration['url'] || "http://localhost:#{test_port}"
 
 # The testing environment will include all JSONAPI resources defined for the given url
 # No reloading of resources is done, since this gem does not know which publishers are available
-jsonapi_service = SP::JSONAPI::Service.new(pg_connection, url)
-$jsonapi_adapter = SP::JSONAPI::Adapters::RawDb.new(jsonapi_service)
+jsonapi_service = SP::Duh::JSONAPI::Service.new(pg_connection, url)
+$jsonapi_adapter = SP::Duh::JSONAPI::Adapters::RawDb.new(jsonapi_service)
 
 get '/*' do
   process_request

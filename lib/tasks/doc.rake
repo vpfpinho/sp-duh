@@ -12,7 +12,7 @@ namespace :sp do
 
           Rails.logger = Logger.new(STDOUT)
           
-          generator = SP::JSONAPI::Doc::Generator.new($db || ActiveRecord::Base.connection.raw_connection)
+          generator = SP::Duh::JSONAPI::Doc::Generator.new($db || ActiveRecord::Base.connection.raw_connection)
           if arguments[:folder].nil?
             generator.generate(arguments[:publisher], arguments[:version])
           else
