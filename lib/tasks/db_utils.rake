@@ -34,7 +34,7 @@ def connect_to_pg
 end
 
 def config_json_api
-  jsonapi_service = SP::Duh::JSONAPI::Service.new($db, JSONAPI_PREFIX)
+  jsonapi_service = SP::JSONAPI::Service.new($db, JSONAPI_PREFIX)
   jsonapi_service.setup()
   jsonapi_service.configuration.reload!
 end
