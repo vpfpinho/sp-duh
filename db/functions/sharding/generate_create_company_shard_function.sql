@@ -485,7 +485,7 @@ BEGIN
 
   EXECUTE query;
 
-  EXECUTE 'SET search_path TO ''' || original_search_path || '''';
+  EXECUTE 'SET search_path TO '|| original_search_path ;
 
   RETURN TRUE;
 -- EXCEPTION
