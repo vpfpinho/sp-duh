@@ -12,4 +12,5 @@ task :xls2jrxml, [:xls_file] do |task, args|
 
   converter = ::Sp::Excel::Loader::Jrxml::ExcelToJrxml.new(args[:xls_file], nil, true, true, true)
   File.rename("#{jrxml_base}.jrxml", "./tmp/#{jrxml_base}.jrxml")
+  puts "Output file: ./tmp/#{jrxml_base}.jrxml".green
 end
