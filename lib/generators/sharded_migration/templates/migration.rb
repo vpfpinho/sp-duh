@@ -18,7 +18,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
 
       end
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.050
+      sleep 0.250
     end
 
     # If migration add structural changes on public objects and want run migration
@@ -41,6 +41,8 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
           # Code to run on sharded companies' schemas
 
       end
+      # IF CHANGING TABLE we need to keep low cpu usage on DB
+      sleep 0.250
     end
 
     # If migration add structural changes on public objects and want run migration

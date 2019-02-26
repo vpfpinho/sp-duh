@@ -10,14 +10,14 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       # Code to run on user templates' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.050
+      sleep 0.250
     end
 
     migrate_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name|
       # Code to run on fiscal years' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
-      sleep 0.050
+      sleep 0.250
     end
   end
 
@@ -31,11 +31,15 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
     rollback_user_templates do |schema, table_prefix, ut, tablespace_name|
       # Code to run on user templates' schemas
 
+      # IF CHANGING TABLE we need to keep low cpu usage on DB
+      sleep 0.250
     end
 
     rollback_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name|
       # Code to run on fiscal years' schemas
 
+      # IF CHANGING TABLE we need to keep low cpu usage on DB
+      sleep 0.250
     end
   end
 
