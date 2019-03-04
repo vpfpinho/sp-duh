@@ -24,7 +24,6 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
     # If migration add structural changes on public objects and want run migration
     # without a full deploy, please uncomment the next line
     # invalidate_postgresql_redis_cache!
-    # execute %Q[ SELECT sharding.generate_create_company_shard_function(FALSE); ]
   end
 
   def down
