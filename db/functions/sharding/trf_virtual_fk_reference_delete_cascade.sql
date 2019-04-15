@@ -47,7 +47,7 @@ BEGIN
       company_schema_name := 'public';
     END IF;
   ELSE
-      company_schema_name := sharding.get_schema_name_for_table(OLD.company_id, referencing_table);
+      company_schema_name := COALESCE(sharding.get_schema_name_for_table(OLD.company_id, referencing_table),'public');
   END IF;
 
   IF company_schema_name IS NOT NULL THEN
