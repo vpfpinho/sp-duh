@@ -13,7 +13,10 @@ BEGIN
   IF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? _table_name ) THEN
     table_schema_name := 'public';
   ELSE
-    table_schema_name := sharding.get_sharded_schema_name(_company_id);
+    SELECT CASE WHEN c.use_sharded_company THEN c.schema_name ELSE 'public' END
+      FROM public.companies c
+     WHERE c.id = _company_id
+    INTO table_schema_name;
   END IF;
 
   RETURN;
