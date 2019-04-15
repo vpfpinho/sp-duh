@@ -3,6 +3,7 @@
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_update_restrict()
 RETURNS TRIGGER AS $BODY$
 DECLARE
+  _current_cluster integer;
   company_schema_name TEXT;
   culprit_schemas TEXT[];
   referencing_columns TEXT[];
@@ -48,9 +49,10 @@ BEGIN
         culprit_schemas := culprit_schemas || company_schema_name;
       END IF;
   ELSE
-    -- The table doesn't have a company_id column, check all company schemas
+    -- The table does not have a company_id column, check all cluster schemas
+    SHOW cloudware.cluster INTO _current_cluster;
     FOR company_schema_name IN
-      SELECT schema_name FROM public.companies WHERE use_sharded_company
+      SELECT schema_name FROM public.companies WHERE use_sharded_company AND NOT is_deleted AND cluster = _current_cluster
     LOOP
       IF sharding.check_record_existence(format('%1$I.%2$I', company_schema_name, referencing_table), trigger_condition) THEN
         culprit_schemas := culprit_schemas || company_schema_name;

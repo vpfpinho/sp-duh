@@ -3,6 +3,7 @@
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_update_set_default()
 RETURNS TRIGGER AS $BODY$
 DECLARE
+  _current_cluster integer;
   company_schema_name TEXT;
   referencing_columns TEXT[];
   referencing_table TEXT;
@@ -57,9 +58,10 @@ BEGIN
     -- RAISE DEBUG 'query: %', query;
     EXECUTE query;
   ELSE
-    -- The table doesn't have a company_id column, update all schemas
+    -- The table does not have a company_id column, update all cluster schemas
+    SHOW cloudware.cluster INTO _current_cluster;
     FOR company_schema_name IN
-      SELECT schema_name FROM public.companies WHERE use_sharded_company
+      SELECT schema_name FROM public.companies WHERE use_sharded_company AND NOT is_deleted AND cluster = _current_cluster
     LOOP
       query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
         company_schema_name,
