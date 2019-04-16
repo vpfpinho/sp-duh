@@ -34,14 +34,6 @@ BEGIN
 
   auxiliary_table_information = sharding.get_auxiliary_table_information();
 
-  queries := queries || format($QUERY$
-    SELECT common.execute_outside_of_transaction($$DELETE FROM sharding.sharding_statistics WHERE sharding_key = %1$s;$$);
-  $QUERY$, shard_company_id);
-
-  queries := queries || format($QUERY$
-    SELECT common.execute_outside_of_transaction($$INSERT INTO sharding.sharding_statistics (sharding_key, triggered_by) VALUES (%1$s, %%4$L);$$);
-  $QUERY$, shard_company_id);
-
   -------------------------------------------------------------------------------------------------------------
   -- Invoke the sharding.get_queries_to_run_before_sharding_company_structure function if set by the project --
   -------------------------------------------------------------------------------------------------------------
@@ -409,14 +401,6 @@ BEGIN
   IF common.function_exists('sharding.get_queries_to_run_after_sharding_company_structure') THEN
     queries := queries || (SELECT sharding.get_queries_to_run_after_sharding_company_structure(auxiliary_table_information));
   END IF;
-
-  queries := queries || format($QUERY$
-    SELECT common.execute_outside_of_transaction($$
-      UPDATE sharding.sharding_statistics
-      SET status = (CASE WHEN %%4$L = 'insert' THEN 'success' ELSE 'created-structure' END)::sharding.sharding_status
-      WHERE sharding_key = %1$s;
-    $$);
-  $QUERY$, shard_company_id);
 
   --------------------------------
   -- Create the actual function --
