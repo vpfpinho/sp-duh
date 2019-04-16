@@ -18,7 +18,7 @@ BEGIN
   END IF;
 
   IF _current_cluster IS DISTINCT FROM NEW.cluster THEN
-    RAISE WARNING 'Ignoring company for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
+    RAISE EXCEPTION 'Company is configured for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
     RETURN NEW;
   END IF;
 
