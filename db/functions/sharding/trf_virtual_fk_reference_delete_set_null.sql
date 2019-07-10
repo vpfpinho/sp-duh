@@ -54,20 +54,25 @@ BEGIN
   END IF;
 
   IF company_schema_name IS NOT NULL THEN
-    -- This table has a company_id column, update just the associated schema
-    query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
-      company_schema_name,
-      referencing_table,
-      array_to_string((select array_agg(format('%1$I = NULL', columns)) FROM unnest(referencing_columns) columns), ', '),
-      array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
-    );
-
-    IF trigger_condition_clause IS NOT NULL THEN
-      query := query || ' AND ' || trigger_condition_clause;
+    IF NOT common.schema_exists(company_schema_name) THEN
+      company_schema_name := NULL;
     END IF;
+    IF company_schema_name IS NOT NULL THEN
+      -- This table has a company_id column, update just the associated schema
+      query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
+        company_schema_name,
+        referencing_table,
+        array_to_string((select array_agg(format('%1$I = NULL', columns)) FROM unnest(referencing_columns) columns), ', '),
+        array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
+      );
 
-    -- RAISE DEBUG 'query: %', query;
-    EXECUTE query;
+      IF trigger_condition_clause IS NOT NULL THEN
+        query := query || ' AND ' || trigger_condition_clause;
+      END IF;
+
+      -- RAISE DEBUG 'query: %', query;
+      EXECUTE query;
+    END IF;
   ELSE
     -- The table does not have a company_id column, update all cluster schemas
     SHOW cloudware.cluster INTO _current_cluster;
