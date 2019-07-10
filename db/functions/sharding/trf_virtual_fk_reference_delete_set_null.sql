@@ -45,6 +45,12 @@ BEGIN
       WHEN OTHERS THEN
         company_schema_name := NULL;
     END;
+    IF TG_TABLE_NAME = 'users' THEN
+      -- company_id IS NOT NULL (checked above) and company does not exist on public.companies
+      IF company_schema_name IS NULL THEN
+        RETURN OLD;
+      END IF;
+    END IF;
   END IF;
 
   IF company_schema_name IS NOT NULL THEN
