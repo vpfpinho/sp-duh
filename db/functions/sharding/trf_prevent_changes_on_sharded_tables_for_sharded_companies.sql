@@ -3,14 +3,12 @@
 CREATE OR REPLACE FUNCTION sharding.trf_prevent_changes_on_sharded_tables_for_sharded_companies()
 RETURNS TRIGGER AS $BODY$
 DECLARE
-  _stack         text;
   _company_id    integer;
   _comp          record; 
   _current_cluster integer;
 BEGIN
 
-  GET DIAGNOSTICS _stack = PG_CONTEXT;
-  IF _stack ~ 'sharding\.trf_shard_existing_data()' THEN
+  IF sharding.moving_existing_data() THEN
     RETURN CASE TG_OP WHEN 'DELETE' THEN OLD ELSE NEW END;
   END IF;
 
