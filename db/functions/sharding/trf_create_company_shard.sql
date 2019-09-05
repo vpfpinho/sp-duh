@@ -17,6 +17,9 @@ BEGIN
     NEW.schema_name := format('pt%1$s_c%2$s', NEW.tax_registration_number, NEW.id);
   END IF;
 
+  IF sharding.moving_existing_data() THEN
+    NEW.cluster := COALESCE(NEW.cluster, _current_cluster);
+  END IF;
   IF _current_cluster IS DISTINCT FROM NEW.cluster THEN
     RAISE EXCEPTION 'Company is configured for cluster % [current cluster id %]', NEW.cluster, _current_cluster;
     RETURN NEW;
