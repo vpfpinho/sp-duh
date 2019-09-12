@@ -1,5 +1,6 @@
 -- -- DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
 
+
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
   IN p_use_original_sequence BOOLEAN DEFAULT TRUE
 )
@@ -124,7 +125,8 @@ BEGIN
         'foreign_keys', fk.foreign_keys,
         'triggers', trg.triggers
       )
-    )::JSONB INTO all_objects_data
+    )::JSONB
+  INTO all_objects_data
   FROM table_columns c
     LEFT JOIN table_indexes i ON c.table_oid = i.table_oid
     LEFT JOIN table_foreign_keys fk ON c.table_oid = fk.table_oid
@@ -360,10 +362,15 @@ BEGIN
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
     WHERE n.nspname = 'public'
       AND NOT COALESCE(all_objects_data,'{}'::JSONB) ? v.viewname
+      AND v.viewname::TEXT NOT IN (
+        SELECT jsonb_array_elements_text FROM jsonb_array_elements_text(auxiliary_table_information->'unsharded_views')
+      )
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+    -- RAISE DEBUG 'object_name: %', object_name;
 
     aux := regexp_replace(aux, 'public\.', '', 'g');
+
 
     queries := queries || format('CREATE VIEW %1$s.%2$I AS %3$s;',
       p_destination_schema_name,
@@ -381,8 +388,12 @@ BEGIN
       JOIN pg_catalog.pg_views v ON c.oid = (v.schemaname || '.' || v.viewname)::regclass::oid
     WHERE n.nspname = 'public'
       AND COALESCE(all_objects_data,'{}'::JSONB) ? v.viewname
+      AND v.viewname::TEXT NOT IN (
+        SELECT jsonb_array_elements_text FROM jsonb_array_elements_text(auxiliary_table_information->'unsharded_views')
+      )
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+    -- RAISE DEBUG 'object_name: %', object_name;
 
     aux := regexp_replace(aux, 'public\.', '', 'g');
 
