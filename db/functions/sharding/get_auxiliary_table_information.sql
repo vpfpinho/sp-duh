@@ -7,6 +7,7 @@ RETURNS JSONB AS $BODY$
 BEGIN
   auxiliary_table_information = '{
     "unsharded_tables": [],
+    "unsharded_views": [],
     "inherited_tables": []
   }'::JSONB;
 
