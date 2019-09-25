@@ -23,6 +23,7 @@ BEGIN
     p_update_condition,
     p_delete_condition
   )) LOOP
+    -- RAISE DEBUG 'sharding.create_virtual_foreign_key - query: %', query;
     EXECUTE query;
   END LOOP;
 END;

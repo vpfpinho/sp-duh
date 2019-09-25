@@ -12,13 +12,14 @@ BEGIN
     $RETURN$
       DO $BLOCK$
         BEGIN
-          IF NOT '%2$s::%3$s' = ANY(%4$s::TEXT[]) THEN
             %1$s
-          END IF;
+        EXCEPTION WHEN duplicate_object THEN
+            RAISE DEBUG 'Ignoring duplicate %2$s::%3$s';
         END;
       $BLOCK$
     $RETURN$,
-    p_query, p_table_name, p_trigger_name, '%3$L'
+    p_query, p_table_name, p_trigger_name
   );
 END;
 $BODY$ LANGUAGE plpgsql;
+
