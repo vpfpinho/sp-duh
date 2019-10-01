@@ -1,3 +1,4 @@
+-- JOANA: tested - we need to grant there are no exceptions
 -- DROP FUNCTION IF EXISTS sharding.check_record_existence(TEXT, JSONB);
 
 CREATE OR REPLACE FUNCTION sharding.check_record_existence(
@@ -6,6 +7,7 @@ CREATE OR REPLACE FUNCTION sharding.check_record_existence(
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
+  query TEXT;
   record_exists BOOLEAN;
   clauses TEXT;
   clause_fields TEXT[];
@@ -16,7 +18,9 @@ DECLARE
 BEGIN
   record_exists := FALSE;
 
-  -- raise notice 'sharding.check_record_existence(''%'', ''%'');', p_table_name, p_columns_and_values;
+  IF p_table_name IS NULL OR p_columns_and_values IS NULL THEN
+    RAISE EXCEPTION 'Invalid arguments calling: %', format('sharding.check_record_existence(%L,%L)', p_table_name, p_columns_and_values);
+  END IF;
 
   clause_fields := (SELECT array_agg(jsonb_object_keys) FROM jsonb_object_keys(p_columns_and_values));
 
@@ -54,12 +58,10 @@ BEGIN
     p_columns_and_values
   ) INTO clauses USING p_columns_and_values;
 
-  EXECUTE format('SELECT EXISTS (SELECT 1 FROM %1$s WHERE (%2$s) IN (%3$s))', p_table_name, array_to_string(clause_fields, ', '), clauses) INTO record_exists;
+  query := format('SELECT EXISTS (SELECT 1 FROM %1$s WHERE (%2$s) IN (%3$s))', p_table_name, array_to_string(clause_fields, ', '), clauses);
+  -- RAISE DEBUG 'query: %', query;
+  EXECUTE query INTO record_exists;
 
   RETURN record_exists;
-
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN false;
 END;
 $BODY$ LANGUAGE 'plpgsql';

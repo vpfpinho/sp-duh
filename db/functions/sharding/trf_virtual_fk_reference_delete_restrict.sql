@@ -1,9 +1,11 @@
--- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_restrict() CASCADE;
-
+-- JOANA: tested on public.tax_exemption_reasons / pt999999990_c2425.documents
+-- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_restrict();
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_delete_restrict()
 RETURNS TRIGGER AS $BODY$
 DECLARE
   _current_cluster integer;
+  specific_company_id integer;
+  specific_schema_name TEXT;
   company_schema_name TEXT;
   culprit_schemas TEXT[];
   referencing_columns TEXT[];
@@ -12,58 +14,60 @@ DECLARE
   referenced_values TEXT[];
   trigger_condition JSONB;
 BEGIN
-  -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() TG_NAME:% TG_TABLE_SCHEMA:% TG_TABLE_NAME:% TG_NARGS:% TG_ARGV:%', TG_NAME, TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NARGS, TG_ARGV;
-  -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() -        OLD: %', OLD;
+  RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() TG_NAME:% TG_TABLE_SCHEMA:% TG_TABLE_NAME:% TG_NARGS:% TG_ARGV:%', TG_NAME, TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NARGS, TG_ARGV;
+  RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() -        OLD: %', OLD;
 
   referencing_columns := TG_ARGV[0];
   referencing_table := TG_ARGV[1];
   referenced_columns := TG_ARGV[2];
   trigger_condition := TG_ARGV[3];
 
-  IF TG_TABLE_NAME = 'users' THEN
-    IF OLD.company_id IS NULL THEN
-      RETURN OLD;
-    END IF;
-  END IF;
+  -- Extract the values from the OLD record into the referenced_values variable
+  -- Extract the values from the NEW record into the referenced_values variable
+  EXECUTE format(
+    format('SELECT ARRAY[%s]::TEXT[]',
+      (SELECT array_to_string((SELECT array_agg('($1).%I'::TEXT) FROM (SELECT generate_series(1::integer, array_length(referenced_columns, 1)::integer)) bogus), ', '))
+    ),
+    VARIADIC referenced_columns
+  ) USING OLD INTO referenced_values;
 
-  IF trigger_condition IS NOT NULL THEN
-    trigger_condition := sharding.merge_jsonb_with_arrays_of_keys_and_values(trigger_condition, referencing_columns, referenced_values);
-  END IF;
+  trigger_condition := sharding.merge_jsonb_with_arrays_of_keys_and_values(trigger_condition, referencing_columns, referenced_values);
 
-  -- Try to get the company schema from th referencing table (in case it's supplied as <schema>.<table>)
+  RAISE DEBUG 'trigger_condition: %', trigger_condition;
+
+  -- Try to get the company schema from the referencing table (in case it's supplied as <schema>.<table>)
   IF (SELECT EXISTS (SELECT 1 FROM regexp_matches(referencing_table, '^.+\..+$'))) THEN
-    SELECT (regexp_matches(referencing_table, '^(.+?)\..+?'))[1] INTO company_schema_name;
-    SELECT regexp_replace(referencing_table, company_schema_name || '.', '') INTO referencing_table;
+    SELECT (regexp_matches(referencing_table, '^(.+?)\..+?'))[1] INTO specific_schema_name;
+    SELECT regexp_replace(referencing_table, specific_schema_name || '.', '') INTO referencing_table;
+  ELSIF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? referencing_table ) THEN
+    specific_schema_name := 'public';
   ELSIF TG_TABLE_NAME = 'companies' THEN
-    IF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? referencing_table ) THEN
-      company_schema_name := 'public';
-    ELSIF OLD.use_sharded_company THEN 
-      company_schema_name := OLD.schema_name;
-    ELSE
-      company_schema_name := 'public';
-    END IF;
+    specific_company_id := OLD.id;
   ELSE
-      company_schema_name := COALESCE(sharding.get_schema_name_for_table(OLD.company_id, referencing_table),'public');
+    BEGIN
+      specific_company_id := OLD.company_id;
+      EXCEPTION
+        WHEN undefined_column THEN
+          specific_company_id := NULL;
+    END;
   END IF;
 
-  -- RAISE DEBUG 'company_schema_name = %', company_schema_name;
-  IF company_schema_name IS NOT NULL THEN
-    -- This table has a company_id column, check just the associated schema
+  SHOW cloudware.cluster INTO _current_cluster;
+  FOR company_schema_name IN
+    SELECT pg_namespace.nspname
+      FROM pg_catalog.pg_class
+      JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+      LEFT JOIN public.companies ON NOT companies.is_deleted AND companies.schema_name = pg_namespace.nspname AND companies.cluster = _current_cluster
+     WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
+       AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
+       AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
+       AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
+  LOOP
+      RAISE DEBUG 'company_schema_name = %', company_schema_name;
       IF sharding.check_record_existence(format('%1$I.%2$I', company_schema_name, referencing_table), trigger_condition) THEN
         culprit_schemas := culprit_schemas || company_schema_name;
       END IF;
-  ELSE
-    -- The table does not have a company_id column, check all company schemas
-    SHOW cloudware.cluster INTO _current_cluster;
-    FOR company_schema_name IN
-      SELECT schema_name FROM public.companies WHERE use_sharded_company AND NOT is_deleted AND cluster = _current_cluster
-    LOOP
-      -- RAISE DEBUG 'company_schema_name = %', company_schema_name;
-      IF sharding.check_record_existence(format('%1$I.%2$I', company_schema_name, referencing_table), trigger_condition) THEN
-        culprit_schemas := culprit_schemas || company_schema_name;
-      END IF;
-    END LOOP;
-  END IF;
+  END LOOP;
 
   IF array_length(culprit_schemas, 1) > 0 THEN
     RAISE foreign_key_violation
@@ -73,7 +77,7 @@ BEGIN
     ;
   END IF;
 
-  -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() - RETURN OLD: %', OLD;
+  RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() - RETURN OLD: %', OLD;
   RETURN OLD;
 END;
 $BODY$ LANGUAGE 'plpgsql';
