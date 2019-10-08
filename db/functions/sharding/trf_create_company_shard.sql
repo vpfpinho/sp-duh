@@ -1,5 +1,4 @@
--- -- DROP FUNCTION IF EXISTS sharding.trf_create_company_shard() CASCADE;
-
+-- DROP FUNCTION IF EXISTS sharding.trf_create_company_shard();
 CREATE OR REPLACE FUNCTION sharding.trf_create_company_shard()
 RETURNS TRIGGER AS $BODY$
 DECLARE
