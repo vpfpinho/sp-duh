@@ -1,5 +1,4 @@
 -- DROP FUNCTION IF EXISTS sharding.wrap_with_duplicate_check(TEXT, TEXT, TEXT);
-
 CREATE OR REPLACE FUNCTION sharding.wrap_with_duplicate_check(
   IN p_query        TEXT,
   IN p_table_name   TEXT,
@@ -12,9 +11,9 @@ BEGIN
     $RETURN$
       DO $BLOCK$
         BEGIN
+          IF NOT sharding.trigger_exists('%2$s','%3$s') THEN
             %1$s
-        EXCEPTION WHEN duplicate_object THEN
-            RAISE DEBUG 'Ignoring duplicate %2$s::%3$s';
+          END IF;
         END;
       $BLOCK$
     $RETURN$,
@@ -22,4 +21,3 @@ BEGIN
   );
 END;
 $BODY$ LANGUAGE plpgsql;
-

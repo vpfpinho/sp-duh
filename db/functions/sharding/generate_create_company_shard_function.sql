@@ -1,6 +1,6 @@
--- -- DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
-
-
+DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text, sharding.sharding_triggered_by);
+DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text);
+DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
   IN p_use_original_sequence BOOLEAN DEFAULT TRUE
 )
@@ -421,31 +421,23 @@ BEGIN
     CREATE OR REPLACE FUNCTION sharding.create_company_shard(
         IN p_company_id           INTEGER
       , IN p_company_schema_name  TEXT
-      , IN p_triggered_by         sharding.sharding_triggered_by
     )
     RETURNS BOOLEAN AS $FUNCTION_BODY$
     DECLARE
       query                   TEXT;
       seq_nextval             BIGINT;
       previous_search_path    TEXT;
-      current_public_triggers TEXT[];
       tablespace_name         TEXT;
     BEGIN
       SHOW search_path INTO previous_search_path;
       EXECUTE 'SET search_path to ' || p_company_schema_name || ', public';
 
-      RAISE NOTICE 'SETTING tablespace';
       tablespace_name := common.get_tablespace_name(p_company_schema_name);
+      
 
       EXECUTE 'SET default_tablespace TO ' || tablespace_name;
 
-      SELECT array_agg('public.' || c.relname || '::' || t.tgname)
-      FROM pg_trigger t
-        JOIN pg_class c ON t.tgrelid = c.oid
-        JOIN pg_namespace n ON c.relnamespace = n.oid
-      WHERE NOT t.tgisinternal
-        AND n.nspname = 'public'
-      INTO current_public_triggers;
+      RAISE NOTICE 'Sharding company: %% - %% - %%', p_company_id, p_company_schema_name, tablespace_name;
 
       %1$s
 
@@ -467,7 +459,7 @@ BEGIN
       SELECT string_agg(
         CASE WHEN unnest ~* '^(?:--|RAISE|EXECUTE|SHOW)'
         THEN format(E'\n      %1$s', unnest)
-        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id, current_public_triggers, p_triggered_by);', regexp_replace(unnest, '\s+', ' ', 'g'))
+        ELSE format(E'EXECUTE format(%1$L, p_company_schema_name, p_company_id);', regexp_replace(unnest, '\s+', ' ', 'g'))
         -- Switch this with the previous one for debug
         -- ELSE format(E'query := format(%1$L, p_company_schema_name, p_company_id);\n      RAISE DEBUG ''query: %%'', query;\n      EXECUTE query;', regexp_replace(unnest, '\s+', ' ', 'g'))
         END, E'\n      '
