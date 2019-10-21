@@ -1,8 +1,7 @@
-DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text, sharding.sharding_triggered_by);
 DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text);
 DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
-  IN p_use_original_sequence BOOLEAN DEFAULT TRUE
+  IN p_use_original_sequence BOOLEAN DEFAULT FALSE
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
