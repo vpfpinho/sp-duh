@@ -1,10 +1,11 @@
--- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_set_default() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_set_default();
 
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_delete_set_default()
 RETURNS TRIGGER AS $BODY$
 DECLARE
-  _current_cluster integer;
-  company_schema_name TEXT;
+  specific_company_id integer;
+  specific_schema_name TEXT;
+  table_to_update TEXT;
   referencing_columns TEXT[];
   referencing_table TEXT;
   referenced_columns TEXT[];
@@ -28,26 +29,38 @@ BEGIN
     VARIADIC referenced_columns
   ) USING OLD INTO referenced_values;
 
-  -- Try to get the company schema from th referencing table (in case it's supplied as <schema>.<table>)
+  -- Try to get the company schema from the referencing table (in case it's supplied as <schema>.<table>)
   IF (SELECT EXISTS (SELECT 1 FROM regexp_matches(referencing_table, '^.+\..+$'))) THEN
-    SELECT (regexp_matches(referencing_table, '^(.+?)\..+?'))[1] INTO company_schema_name;
-    SELECT regexp_replace(referencing_table, company_schema_name || '.', '') INTO referencing_table;
+    SELECT (regexp_matches(referencing_table, '^(.+?)\..+?'))[1] INTO specific_schema_name;
+    SELECT regexp_replace(referencing_table, specific_schema_name || '.', '') INTO referencing_table;
+  ELSIF ( sharding.get_auxiliary_table_information()->'unsharded_tables' ? referencing_table ) THEN
+    specific_schema_name := 'public';
+  ELSIF TG_TABLE_NAME = 'companies' THEN
+    specific_company_id := OLD.id;
   ELSE
     BEGIN
-      company_schema_name := sharding.get_schema_name_for_table(OLD.company_id, referencing_table);
-    EXCEPTION
-      WHEN OTHERS THEN
-        company_schema_name := NULL;
+      specific_company_id := OLD.company_id;
+      EXCEPTION
+        WHEN undefined_column THEN
+          specific_company_id := NULL;
     END;
   END IF;
 
-  IF company_schema_name IS NOT NULL THEN
-    -- This table has a company_id column, update just the associated schema
-    query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
-      company_schema_name,
-      referencing_table,
-      array_to_string((select array_agg(format('%1$I = %2$s', columns, COALESCE(sharding.get_column_default_value(referencing_table, columns, company_schema_name), 'NULL'))) FROM unnest(referencing_columns) columns), ', '),
-      array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
+  FOR table_to_update IN
+    SELECT format('%I.%I', pg_namespace.nspname, pg_class.relname)
+      FROM pg_catalog.pg_class
+      JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+      LEFT JOIN public.companies ON companies.schema_name = pg_namespace.nspname
+     WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
+       AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
+       AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
+       AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
+  LOOP
+    -- RAISE DEBUG 'table_to_update = %', table_to_update;
+    query := format('UPDATE %s SET %s WHERE %s',
+      table_to_update,
+      array_to_string((SELECT array_agg(format('%I = %s', columns, COALESCE(sharding.get_column_default_value(referencing_table, columns, schema_to_update), 'NULL'))) FROM unnest(referencing_columns) columns), ', '),
+      array_to_string((SELECT array_agg(format('%I = %L', filters.column_name, filters.column_value)) FROM (SELECT unnest(referencing_columns) AS column_name, unnest(referenced_values) AS column_value) filters), ' AND ')
     );
 
     IF trigger_condition_clause IS NOT NULL THEN
@@ -56,28 +69,8 @@ BEGIN
 
     -- RAISE DEBUG 'query: %', query;
     EXECUTE query;
-  ELSE
-    -- The table does not have a company_id column, update all cluster schemas
-    SHOW cloudware.cluster INTO _current_cluster;
-    FOR company_schema_name IN
-      SELECT schema_name FROM public.companies WHERE use_sharded_company AND NOT is_deleted AND cluster = _current_cluster
-    LOOP
-      query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
-        company_schema_name,
-        referencing_table,
-        array_to_string((select array_agg(format('%1$I = %2$s', columns, COALESCE(sharding.get_column_default_value(referencing_table, columns, company_schema_name), 'NULL'))) FROM unnest(referencing_columns) columns), ', '),
-        array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
-      );
 
-      IF trigger_condition_clause IS NOT NULL THEN
-        query := query || ' AND ' || trigger_condition_clause;
-      END IF;
-
-      -- RAISE DEBUG 'query: %', query;
-      EXECUTE query;
-
-    END LOOP;
-  END IF;
+  END LOOP;
 
   -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_set_default() - RETURN OLD: %', OLD;
   RETURN OLD;

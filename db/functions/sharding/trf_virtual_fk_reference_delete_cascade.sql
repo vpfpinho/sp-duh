@@ -1,12 +1,11 @@
--- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_cascade() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_delete_cascade();
 
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_delete_cascade()
 RETURNS TRIGGER AS $BODY$
 DECLARE
-  _current_cluster integer;
   specific_company_id integer;
   specific_schema_name TEXT;
-  company_schema_name TEXT;
+  table_to_delete TEXT;
   referencing_columns TEXT[];
   referencing_table TEXT;
   referenced_columns TEXT[];
@@ -47,31 +46,29 @@ BEGIN
     END;
   END IF;
 
-  SHOW cloudware.cluster INTO _current_cluster;
-  FOR company_schema_name IN
-    SELECT pg_namespace.nspname
+  FOR table_to_delete IN
+    SELECT format('%I.%I', pg_namespace.nspname, pg_class.relname)
       FROM pg_catalog.pg_class
       JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      LEFT JOIN public.companies ON NOT companies.is_deleted AND companies.schema_name = pg_namespace.nspname AND companies.cluster = _current_cluster
+      LEFT JOIN public.companies ON companies.schema_name = pg_namespace.nspname
      WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
        AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
        AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
        AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
   LOOP
-      -- RAISE DEBUG 'company_schema_name = %', company_schema_name;
-      query := format('DELETE FROM %1$I.%2$I WHERE %3$s',
-        company_schema_name,
-        referencing_table,
-        array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
-      );
+    -- RAISE DEBUG 'table_to_delete = %', table_to_delete;
+    query := format('DELETE FROM %s WHERE %s',
+      table_to_delete,
+      array_to_string((SELECT array_agg(format('%I = %L', filters.column_name, filters.column_value)) FROM (SELECT unnest(referencing_columns) AS column_name, unnest(referenced_values) AS column_value) filters), ' AND ')
+    );
 
-      IF trigger_condition_clause IS NOT NULL THEN
-        query := query || ' AND ' || trigger_condition_clause;
-      END IF;
+    IF trigger_condition_clause IS NOT NULL THEN
+      query := query || ' AND ' || trigger_condition_clause;
+    END IF;
 
-      RAISE DEBUG 'query: %', query;
-      EXECUTE query;
-    END LOOP; 
+    -- RAISE DEBUG 'query: %', query;
+    EXECUTE query;
+  END LOOP; 
 
   -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_cascade() - RETURN OLD: %', OLD;
   RETURN OLD;
