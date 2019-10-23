@@ -1,4 +1,3 @@
--- JOANA: tested - we need to grant there are no exceptions
 -- DROP FUNCTION IF EXISTS sharding.check_record_existence(TEXT, JSONB);
 
 CREATE OR REPLACE FUNCTION sharding.check_record_existence(
