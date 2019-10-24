@@ -22,7 +22,7 @@ BEGIN
   referenced_columns := TG_ARGV[2];
   trigger_condition_clause := TG_ARGV[3];
 
-  -- Extract the values from the NEW record into the referenced_values variable
+  -- Extract the values from the OLD record into the referenced_values variable
   EXECUTE format(
     format('SELECT ARRAY[%s]::TEXT[]',
       (SELECT array_to_string((SELECT array_agg('($1).%I'::TEXT) FROM (SELECT generate_series(1::integer, array_length(referenced_columns, 1)::integer)) bogus), ', '))
