@@ -1,12 +1,11 @@
--- JOANA: tested on public.tax_exemption_reasons / pt999999990_c2425.efatura_supplier_configurations
 -- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_reference_update_cascade();
+
 CREATE OR REPLACE FUNCTION sharding.trf_virtual_fk_reference_update_cascade()
 RETURNS TRIGGER AS $BODY$
 DECLARE
-  _current_cluster integer;
   specific_company_id integer;
   specific_schema_name TEXT;
-  company_schema_name TEXT;
+  table_to_update TEXT;
   referencing_columns TEXT[];
   referencing_table TEXT;
   referenced_columns TEXT[];
@@ -56,23 +55,15 @@ BEGIN
     END;
   END IF;
 
-  SHOW cloudware.cluster INTO _current_cluster;
-  FOR company_schema_name IN
-    SELECT pg_namespace.nspname
-      FROM pg_catalog.pg_class
-      JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      LEFT JOIN public.companies ON NOT companies.is_deleted AND companies.schema_name = pg_namespace.nspname AND companies.cluster = _current_cluster
-     WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
-       AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
-       AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
-       AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
+  FOR table_to_update IN
+    SELECT format('%I.%I', referencing_schema, referencing_table)
+      FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
-    -- RAISE DEBUG 'company_schema_name = %', company_schema_name;
-    query := format('UPDATE %1$I.%2$I SET %3$s WHERE %4$s',
-      company_schema_name,
-      referencing_table,
-      array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(new_values) as column_value) filters), ', '),
-      array_to_string((select array_agg(format('%1$I = %2$L', filters.column_name, filters.column_value)) from (SELECT unnest(referencing_columns) as column_name, unnest(referenced_values) as column_value) filters), ' AND ')
+    -- RAISE DEBUG 'table_to_update = %', table_to_update;
+    query := format('UPDATE %s SET %s WHERE %s',
+      table_to_update,
+      array_to_string((SELECT array_agg(format('%I = %L', filters.column_name, filters.column_value)) FROM (SELECT unnest(referencing_columns) AS column_name, unnest(new_values) AS column_value) filters), ', '),
+      array_to_string((SELECT array_agg(format('%I = %L', filters.column_name, filters.column_value)) FROM (SELECT unnest(referencing_columns) AS column_name, unnest(referenced_values) AS column_value) filters), ' AND ')
     );
 
     IF trigger_condition_clause IS NOT NULL THEN

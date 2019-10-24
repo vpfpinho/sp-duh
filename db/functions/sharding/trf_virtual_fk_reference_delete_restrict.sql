@@ -49,20 +49,14 @@ BEGIN
 
   culprit_tables := '{}';
   FOR table_to_check IN
-    SELECT format('%I.%I', pg_namespace.nspname, pg_class.relname)
-      FROM pg_catalog.pg_class
-      JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      LEFT JOIN public.companies ON companies.schema_name = pg_namespace.nspname
-     WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
-       AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
-       AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
-       AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
+    SELECT format('%I.%I', referencing_schema, referencing_table)
+      FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
       -- RAISE DEBUG 'table_to_check = %', table_to_check;
       IF sharding.check_record_existence(table_to_check, trigger_condition) THEN
         -- the first value found invalidates the operation
         RAISE foreign_key_violation USING
-          MESSAGE = format('delete on table %1$I.%2$I violates "%3$s"', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NAME),
+          MESSAGE = format('delete on table %I.%I violates "%s"', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NAME),
           DETAIL = format('tuple (%s) is still referenced from table %s with condition: %s', array_to_string(referenced_values, ', '), table_to_check, trigger_condition);
         -- we may comment raise above and check all schemas with references
         IF NOT table_to_check = ANY (culprit_tables) THEN

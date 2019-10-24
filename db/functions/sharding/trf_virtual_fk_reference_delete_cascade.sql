@@ -47,14 +47,8 @@ BEGIN
   END IF;
 
   FOR table_to_delete IN
-    SELECT format('%I.%I', pg_namespace.nspname, pg_class.relname)
-      FROM pg_catalog.pg_class
-      JOIN pg_catalog.pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      LEFT JOIN public.companies ON companies.schema_name = pg_namespace.nspname
-     WHERE pg_class.relkind = 'r' AND pg_class.relname = referencing_table
-       AND ( pg_namespace.nspname = 'public' OR companies.id IS NOT NULL )
-       AND ( specific_schema_name IS NULL OR pg_namespace.nspname = specific_schema_name )
-       AND ( specific_company_id IS NULL OR companies.id = specific_company_id )
+    SELECT format('%I.%I', referencing_schema, referencing_table)
+      FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
     -- RAISE DEBUG 'table_to_delete = %', table_to_delete;
     query := format('DELETE FROM %s WHERE %s',
