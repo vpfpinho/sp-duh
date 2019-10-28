@@ -1,4 +1,4 @@
--- DROP FUNCTION IF EXISTS sharding.trf_prevent_changes_on_sharded_tables_for_sharded_companies() CASCADE;
+-- DROP FUNCTION IF EXISTS sharding.trf_prevent_changes_on_sharded_tables_for_sharded_companies();
 
 CREATE OR REPLACE FUNCTION sharding.trf_prevent_changes_on_sharded_tables_for_sharded_companies()
 RETURNS TRIGGER AS $BODY$
