@@ -54,7 +54,7 @@ BEGIN
         'type', pg_catalog.format_type(a.atttypid, a.atttypmod),
         'default_value', (SELECT substring(pg_catalog.pg_get_expr(d.adbin, d.adrelid) for 128) FROM pg_catalog.pg_attrdef d WHERE d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef),
         'is_not_null', a.attnotnull
-      ) ORDER BY a.attnum)::JSONB AS columns
+      )::JSONB ORDER BY a.attnum) AS columns
     FROM pg_catalog.pg_attribute a
       JOIN pg_catalog.pg_class c ON a.attrelid = c.oid
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
@@ -74,7 +74,7 @@ BEGIN
         'is_unique', i.indisunique,
         'definition', pg_catalog.pg_get_indexdef(i.indexrelid, 0, true),
         'constraint_definition', pg_catalog.pg_get_constraintdef(con.oid, true)
-      )::JSONB) AS indexes
+      )::JSONB ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname) AS indexes
     FROM pg_catalog.pg_class c
       JOIN pg_catalog.pg_index i ON c.oid = i.indrelid
       JOIN pg_catalog.pg_class c2 ON i.indexrelid = c2.oid
@@ -92,7 +92,7 @@ BEGIN
         'update_action', c.confupdtype,
         'delete_action', c.confdeltype,
         'definition', pg_catalog.pg_get_constraintdef(c.oid, true)
-      )::JSONB) AS foreign_keys
+      )::JSONB ORDER BY c.conname) AS foreign_keys
     FROM pg_catalog.pg_constraint c
       LEFT JOIN pg_catalog.pg_tables t ON c.conrelid = (t.schemaname || '.' || t.tablename)::regclass::oid
     WHERE c.contype = 'f'
@@ -106,7 +106,7 @@ BEGIN
       json_agg(json_build_object(
         'name', t.tgname,
         'definition', pg_catalog.pg_get_triggerdef(t.oid, true)
-      )::JSONB) AS triggers
+      )::JSONB ORDER BY t.tgname) AS triggers
     FROM pg_catalog.pg_trigger t
       LEFT JOIN pg_catalog.pg_tables ta ON t.tgrelid = (ta.schemaname || '.' || ta.tablename)::regclass::oid
     WHERE ta.schemaname = 'public'
@@ -364,6 +364,7 @@ BEGIN
       AND v.viewname::TEXT NOT IN (
         SELECT jsonb_array_elements_text FROM jsonb_array_elements_text(auxiliary_table_information->'unsharded_views')
       )
+    ORDER BY v.viewname
   LOOP
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
     -- RAISE DEBUG 'object_name: %', object_name;
