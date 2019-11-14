@@ -50,7 +50,6 @@ BEGIN
     SELECT format('%I.%I', referencing_schema, referencing_table)
       FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
-    -- RAISE DEBUG 'table_to_delete = %', table_to_delete;
     query := format('DELETE FROM %s WHERE %s',
       table_to_delete,
       array_to_string((SELECT array_agg(format('%I = %L', filters.column_name, filters.column_value)) FROM (SELECT unnest(referencing_columns) AS column_name, unnest(referenced_values) AS column_value) filters), ' AND ')
@@ -60,7 +59,7 @@ BEGIN
       query := query || ' AND ' || trigger_condition_clause;
     END IF;
 
-    -- RAISE DEBUG 'query: %', query;
+    RAISE DEBUG 'query: %', query;
     EXECUTE query;
   END LOOP; 
 
