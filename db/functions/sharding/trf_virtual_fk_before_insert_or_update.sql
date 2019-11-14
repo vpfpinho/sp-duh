@@ -38,7 +38,7 @@ BEGIN
         ), ', '))
     );
 
-    -- RAISE DEBUG 'checking %', referenced_table;
+    RAISE DEBUG 'checking %', referenced_table;
     IF sharding.check_record_existence(referenced_table, record_existence_check_data) THEN
       -- If supplying more than one referenced table, the first one where the values are found validates the 'foreign key'
       -- RAISE INFO 'key (%)=(%) exists on table %(%)', array_to_string(referencing_columns, ', '), array_to_string(referencing_values, ', '), referenced_table, array_to_string(referenced_columns, ', ');
