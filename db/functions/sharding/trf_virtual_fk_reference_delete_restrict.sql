@@ -52,7 +52,7 @@ BEGIN
     SELECT format('%I.%I', referencing_schema, referencing_table)
       FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
-      -- RAISE DEBUG 'table_to_check = %', table_to_check;
+      RAISE DEBUG 'table_to_check = %', table_to_check;
       IF sharding.check_record_existence(table_to_check, trigger_condition) THEN
         -- the first value found invalidates the operation
         RAISE foreign_key_violation USING

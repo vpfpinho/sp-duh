@@ -50,7 +50,6 @@ BEGIN
     SELECT format('%I.%I', referencing_schema, referencing_table)
       FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
-    -- RAISE DEBUG 'table_to_update = %', table_to_update;
     query := format('UPDATE %s SET %s WHERE %s',
       table_to_update,
       array_to_string((SELECT array_agg(format('%I = NULL', columns)) FROM unnest(referencing_columns) columns), ', '),
@@ -61,7 +60,7 @@ BEGIN
       query := query || ' AND ' || trigger_condition_clause;
     END IF;
 
-    -- RAISE DEBUG 'query: %', query;
+    RAISE DEBUG 'query: %', query;
     EXECUTE query;
   END LOOP;
 
