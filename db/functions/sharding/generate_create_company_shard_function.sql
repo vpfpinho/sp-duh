@@ -1,7 +1,7 @@
 DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text);
-DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN);
+DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN); -- old version
+DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function();
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
-  IN p_use_original_sequence BOOLEAN DEFAULT FALSE
 )
 RETURNS BOOLEAN AS $BODY$
 DECLARE
@@ -172,7 +172,7 @@ BEGIN
       -- RAISE DEBUG 'column: %', json_object;
       col_default_value := NULL;
 
-      IF NOT p_use_original_sequence AND (json_object->>'default_value') IS NOT NULL AND json_object->>'default_value' ~ '^nextval\('
+      IF (json_object->>'default_value') IS NOT NULL AND json_object->>'default_value' ~ '^nextval\('
          -- we cannot use specific sequence on inherited tables (otherwise values will collide on parent table)
          AND NOT auxiliary_table_information->'inherited_tables' ? object_name THEN
         -- Need to create a new sequence for the primary key
