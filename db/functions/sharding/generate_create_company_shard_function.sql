@@ -83,6 +83,21 @@ BEGIN
     WHERE t.schemaname = 'public'
     GROUP BY t.schemaname, t.tablename
   ),
+  table_check_constraints AS (
+    SELECT
+      format('%1$I.%2$I', t.schemaname, t.tablename) AS qualified_object_name,
+      (t.schemaname || '.' || t.tablename)::regclass::oid AS table_oid,
+      json_agg(json_build_object(
+        'name', c.conname,
+        'no_inherit', c.connoinherit,
+        'definition', pg_catalog.pg_get_constraintdef(c.oid, true)
+      )::JSONB ORDER BY c.conname) AS check_constraints
+    FROM pg_catalog.pg_constraint c
+      LEFT JOIN pg_catalog.pg_tables t ON c.conrelid = (t.schemaname || '.' || t.tablename)::regclass::oid
+    WHERE c.contype = 'c'
+      AND t.schemaname = 'public'
+    GROUP BY t.schemaname, t.tablename
+  ),
   table_foreign_keys AS (
     SELECT
       format('%1$I.%2$I', t.schemaname, t.tablename) AS qualified_object_name,
@@ -121,6 +136,7 @@ BEGIN
       json_build_object(
         'columns', c.columns,
         'indexes', i.indexes,
+        'check_constraints', cc.check_constraints,
         'foreign_keys', fk.foreign_keys,
         'triggers', trg.triggers
       )
@@ -128,6 +144,7 @@ BEGIN
   INTO all_objects_data
   FROM table_columns c
     LEFT JOIN table_indexes i ON c.table_oid = i.table_oid
+    LEFT JOIN table_check_constraints cc ON c.table_oid = cc.table_oid
     LEFT JOIN table_foreign_keys fk ON c.table_oid = fk.table_oid
     LEFT JOIN table_triggers trg ON c.table_oid = trg.table_oid
   WHERE c.object_name::TEXT NOT IN (
@@ -214,15 +231,36 @@ BEGIN
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
     -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE DEBUG ''-- [INDEXES] TABLE: %1$I'';', object_name);
-
     IF (object_data->>'indexes') IS NOT NULL THEN
+      queries := queries || format('RAISE DEBUG ''-- [INDEXES] TABLE: %1$I'';', object_name);
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'indexes') LOOP
         queries := queries || format('%1$s;', regexp_replace(json_object->>'definition', ' ON (?:.+\.)?', format(' ON %1$s.', p_destination_schema_name)));
 
         IF (json_object->>'is_primary')::BOOLEAN THEN
           queries := queries || format('ALTER TABLE %1$s.%2$I ADD CONSTRAINT %4$I PRIMARY KEY USING INDEX %3$I;', p_destination_schema_name, object_name, json_object->>'name', format('%1$s_pkey', object_name));
         END IF;
+      END LOOP;
+    END IF;
+  END LOOP;
+
+  ---------------------------------
+  -- Build the check constraints --
+  ---------------------------------
+
+  queries := queries || '{ -- Create check constraints }'::TEXT[];
+
+  FOR qualified_object_name, object_data IN SELECT * FROM jsonb_each(all_objects_data) LOOP
+    -- Reset variables
+    aux := NULL;
+
+    object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
+    -- RAISE DEBUG 'object_name: %', object_name;
+
+    IF (object_data->>'check_constraints') IS NOT NULL THEN
+      queries := queries || format('RAISE DEBUG ''-- [CHECK CONSTRAINTS] TABLE: %1$I'';', object_name);
+      FOR json_object IN SELECT * FROM json_array_elements(object_data->'check_constraints') LOOP
+        queries := queries || format('ALTER TABLE %1$s.%2$I ADD CONSTRAINT %3$I %4$s %5$s;', p_destination_schema_name, object_name, json_object->>'name', json_object->>'definition', 
+          CASE WHEN (json_object->>'no_inherit')::BOOLEAN THEN 'NO INHERIT' ELSE '' END);
       END LOOP;
     END IF;
   END LOOP;
@@ -241,10 +279,8 @@ BEGIN
     schema_name := COALESCE(regexp_replace(qualified_object_name, '^(?:(.+)\.)?(?:.*)$', '\1'), 'public');
     -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE DEBUG ''-- [FOREIGN KEYS] TABLE: %1$I'';', object_name);
-
     IF (object_data->>'foreign_keys') IS NOT NULL THEN
-      RAISE DEBUG '% foreign_keys: %', object_name, object_data->'foreign_keys';
+      queries := queries || format('RAISE DEBUG ''-- [FOREIGN KEYS] TABLE: %1$I'';', object_name);
 
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'foreign_keys') LOOP
 
@@ -313,9 +349,8 @@ BEGIN
     object_name := regexp_replace(qualified_object_name, '^(?:.+\.)?(.*)$', '\1');
     -- RAISE DEBUG 'object_name: %', object_name;
 
-    queries := queries || format('RAISE DEBUG ''-- [TRIGGERS] TABLE: %1$I'';', object_name);
-
     IF (object_data->>'triggers') IS NOT NULL THEN
+      queries := queries || format('RAISE DEBUG ''-- [TRIGGERS] TABLE: %1$I'';', object_name);
       FOR json_object IN SELECT * FROM json_array_elements(object_data->'triggers') LOOP
         -- Just replace the name of the table. The executed procedure will NOT be replicated, but should handle the different schemas
         queries := queries || regexp_replace(
