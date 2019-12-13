@@ -11,6 +11,9 @@ DECLARE
   record_existence_check_data JSONB;
   company_schema_name TEXT;
 BEGIN
+  -- RAISE DEBUG 'sharding.trf_virtual_public_fk_before_insert_or_update() TG_NAME:% TG_TABLE_SCHEMA:% TG_TABLE_NAME:% TG_NARGS:% TG_ARGV:%', TG_NAME, TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NARGS, TG_ARGV;
+  -- RAISE DEBUG 'sharding.trf_virtual_public_fk_before_insert_or_update() -        NEW: %', NEW;
+
   referencing_columns := TG_ARGV[0];
   referenced_tables := TG_ARGV[1];
   referenced_columns := TG_ARGV[2];
@@ -52,14 +55,13 @@ BEGIN
       -- RAISE NOTICE 'Tuple (%) exists on table %(%)', array_to_string(referencing_values, ', '), referenced_table, array_to_string(referenced_columns, ', ');
       -- RAISE DEBUG 'sharding.trf_virtual_public_fk_before_insert_or_update() - RETURN NEW: %', NEW;
       RETURN NEW;
-    ELSE
     END IF;
   END LOOP;
 
   -- If we reach this point, the value was not found on any referenced table
-  RAISE foreign_key_violation
-    USING MESSAGE = format('Tuple (%1$s) was not found on %2$s(%3$s)', array_to_string(referencing_values, ', '), referenced_table, array_to_string(referenced_columns, ', ')),
-          TABLE = referenced_table,
-          COLUMN = referenced_columns;
+  RAISE foreign_key_violation USING 
+    MESSAGE = format('insert or update on table %I.%I violates "%s"', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NAME),
+    DETAIL = format('key (%s)=(%s) is not present on %s (%s)', array_to_string(referencing_columns, ', '), array_to_string(referencing_values, ', '), referenced_tables, array_to_string(referenced_columns, ', '));
+
 END;
 $BODY$ LANGUAGE 'plpgsql';
