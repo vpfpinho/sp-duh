@@ -13,7 +13,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       sleep 0.250
     end
 
-    migrate_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name|
+    migrate_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name, company_schema, use_sharded_company|
       # Code to run on fiscal years' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
@@ -35,7 +35,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       sleep 0.250
     end
 
-    rollback_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name|
+    rollback_fiscal_years do |schema, table_prefix, fy, company_id, tablespace_name, company_schema, use_sharded_company|
       # Code to run on fiscal years' schemas
 
       # IF CHANGING TABLE we need to keep low cpu usage on DB
