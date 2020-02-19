@@ -1,8 +1,7 @@
 class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
   def up
-    # If migration add structural changes on public objects and want run migration
-    # without a full deploy, please uncomment the next line (this is not the best way to grant this, but it will work for sure...)
-    # execute %Q[ DROP FUNCTION IF EXISTS sharding.create_company_shard ( integer, text ); ]
+
+    # If migration DOES NOT MAKE STRUCTURAL CHANGES on public schema, you may want to regenarete the sharding.create_company_shard to be able to create companies while migrating
 
     migrate_companies do |schema_name, company_id, use_sharded_company, tablespace_name|
       case schema_name
@@ -21,8 +20,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
       sleep 0.250
     end
 
-    # If migration add structural changes on public objects and want run migration
-    # without a full deploy, please uncomment the next line
+    # If migration ADD STRUCTURAL CHANGES on public objects and want run migration without a full deploy, please uncomment the next line
     # invalidate_postgresql_redis_cache!
   end
 
