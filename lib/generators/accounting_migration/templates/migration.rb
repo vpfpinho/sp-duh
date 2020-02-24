@@ -2,6 +2,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
   def up
 
     # If migration DOES NOT MAKE STRUCTURAL CHANGES on public schema, you may want to regenarete the sharding.create_company_shard to be able to create companies while migrating
+    # execute %Q[ SELECT sharding.generate_create_company_shard_function(); ]
 
     schema = 'accounting'
     ['base_', 'small_', 'micro_', 'independent_', 'nonprofit_'].each do |table_prefix|
