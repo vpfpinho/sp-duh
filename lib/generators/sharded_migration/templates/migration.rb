@@ -9,9 +9,10 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
         when 'public'
           # Code to run on "public" schema
 
-        when 'sharded'
-          # Code to run on "sharded" schema
-          # STUCTURE CHANGES TO TABLES IN THIS SCHEMA MUST ONLY RUN IF ADDING OR REMOVING COLUMNS, NOTHING ELSE!
+        # when 'sharded'
+        #   # this is not being called anymore on migrate_companies
+        #   # Code to run on "sharded" schema
+        #   # STUCTURE CHANGES TO TABLES IN THIS SCHEMA MUST ONLY RUN IF ADDING OR REMOVING COLUMNS, NOTHING ELSE!
 
         else
           # Code to run on sharded companies' schemas
@@ -31,9 +32,10 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
         when 'public'
           # Code to run on "public" schema
 
-        when 'sharded'
-          # Code to run on "sharded" schema
-          # STUCTURE CHANGES TO TABLES IN THIS SCHEMA MUST ONLY RUN IF ADDING OR REMOVING COLUMNS, NOTHING ELSE!
+        # when 'sharded' 
+        #   # this is not being called anymore on rollback_companies
+        #   # Code to run on "sharded" schema
+        #   # STUCTURE CHANGES TO TABLES IN THIS SCHEMA MUST ONLY RUN IF ADDING OR REMOVING COLUMNS, NOTHING ELSE!
 
         else
           # Code to run on sharded companies' schemas
