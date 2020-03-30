@@ -10,7 +10,7 @@ DECLARE
   schema_name TEXT;
   table_name TEXT;
 BEGIN
-  -- RAISE NOTICE 'SELECT sharding.table_exists(''%'', ''%'');', p_relation_name, p_trigger_name;
+  -- RAISE DEBUG 'SELECT sharding.table_exists(''%'');', p_relation_name;
 
   IF (SELECT EXISTS (SELECT 1 FROM regexp_matches(p_relation_name, '^.+\..+$'))) THEN
     SELECT (regexp_matches(p_relation_name, '^(.+?)\..+?'))[1] INTO schema_name;
