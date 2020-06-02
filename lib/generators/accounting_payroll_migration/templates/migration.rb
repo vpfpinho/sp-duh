@@ -1,6 +1,6 @@
 class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
   def up
-    
+
     # If migration DOES NOT MAKE STRUCTURAL CHANGES on public schema, you may want to regenarete the sharding.create_company_shard to be able to create companies while migrating
     # execute %Q[ SELECT sharding.generate_create_company_shard_function(); ]
 
@@ -56,7 +56,7 @@ class <%= migration_class_name %> < ActiveRecord::MigrationWithoutTransaction
                    accounting.get_account_best_match('#{schema}','#{table_prefix}',paa.employee_account) AS employee_account,
                    paa.use_employee_account
               FROM #{sharded_schema}.payroll_accounting_accounts paa
-              LEFT JOIN #{schema}.#{table_prefix}transaction_suggestions_default_accounts tcda ON (tcda.category_id IN ('Payroll::Tax','Payroll::ThirdParty') AND tcda.item_id = paa.id)
+              LEFT JOIN #{schema}.#{table_prefix}transaction_suggestions_default_accounts tcda ON (tcda.category_id IN ('Payroll::Tax','Payroll::ThirdParty') AND tcda.item_id::integer = paa.id)
              WHERE paa.company_id = #{company_id}
                AND paa.category IN ('Taxes', 'Third parties')
                AND paa.code NOT IN ('BBNK','BCSH')
