@@ -6,6 +6,7 @@ type-restriction: true
 attribute-restriction: false
 empty-is-null: true
 page-size: 0
+page-limit: 20000
 request-company-schema: false
 request-sharded-schema: false
 request-accounting-schema: false
