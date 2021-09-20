@@ -1,6 +1,8 @@
 DROP FUNCTION IF EXISTS sharding.create_company_shard(integer, text);
+DROP FUNCTION IF EXISTS sharding.get_sharded_tables();
 DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function(BOOLEAN); -- old version
 DROP FUNCTION IF EXISTS sharding.generate_create_company_shard_function();
+
 CREATE OR REPLACE FUNCTION sharding.generate_create_company_shard_function(
 )
 RETURNS BOOLEAN AS $BODY$
@@ -19,6 +21,7 @@ DECLARE
   json_object JSON;
 
   queries TEXT[];
+  tables TEXT[];
   query TEXT;
   before_queries TEXT[];
   after_queries TEXT[];
@@ -165,6 +168,7 @@ BEGIN
     -- RAISE DEBUG 'object_name: %', object_name;
 
     queries := queries || format('RAISE DEBUG ''-- [TABLES] TABLE: %1$I'';', object_name);
+    tables := tables || format('(''%1$s'')', object_name);
 
     query := format('CREATE TABLE %1$s.%2$I (', p_destination_schema_name, object_name);
 
@@ -448,9 +452,9 @@ BEGIN
     queries := queries || (SELECT sharding.get_queries_to_run_after_sharding_company_structure(auxiliary_table_information));
   END IF;
 
-  --------------------------------
-  -- Create the actual function --
-  --------------------------------
+  --------------------------------------------------------
+  -- Create the actual function to create company shard --
+  --------------------------------------------------------
 
   query := format($$
     CREATE OR REPLACE FUNCTION sharding.create_company_shard(
@@ -507,6 +511,32 @@ BEGIN
 
   EXECUTE query;
 
+
+  ----------------------------------------------------------------------------
+  -- Create the function with sharded table to help on virtual foreign keys --
+  ----------------------------------------------------------------------------
+
+  query := format($$
+    CREATE OR REPLACE FUNCTION sharding.get_sharded_tables (
+      OUT sharded_table_name text
+    ) RETURNS SETOF text AS $FUNCTION_BODY$
+    BEGIN
+
+      RETURN QUERY
+      SELECT * FROM ( VALUES
+               %1$s
+             ) AS t (sharded_table_name);
+
+    END;
+    $FUNCTION_BODY$ LANGUAGE 'plpgsql';
+  $$,
+      array_to_string(tables, ','||E'\n', '')
+  );
+
+  RAISE DEBUG 'query: %', query;
+
+  EXECUTE query;
+
   EXECUTE 'SET search_path TO '|| original_search_path ;
 
   RETURN TRUE;
@@ -515,3 +545,4 @@ BEGIN
 --     RETURN false;
 END;
 $BODY$ LANGUAGE 'plpgsql';
+
