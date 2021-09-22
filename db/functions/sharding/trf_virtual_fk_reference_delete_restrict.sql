@@ -12,6 +12,7 @@ DECLARE
   referenced_values TEXT[];
   trigger_condition JSONB;
   culprit_tables TEXT[];
+  deleted_schema TEXT;
 BEGIN
   -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() TG_NAME:% TG_TABLE_SCHEMA:% TG_TABLE_NAME:% TG_NARGS:% TG_ARGV:%', TG_NAME, TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NARGS, TG_ARGV;
   -- RAISE DEBUG 'sharding.trf_virtual_fk_reference_delete_restrict() -        OLD: %', OLD;
@@ -31,6 +32,7 @@ BEGIN
   trigger_condition := sharding.merge_jsonb_with_arrays_of_keys_and_values(trigger_condition, referencing_columns, referenced_values);
 
   -- Try to get the company schema from the referencing table (in case it's supplied as <schema>.<table>)
+  deleted_schema := '';
   IF (SELECT EXISTS (SELECT 1 FROM regexp_matches(referencing_table, '^.+\..+$'))) THEN
     SELECT (regexp_matches(referencing_table, '^(.+?)\..+?'))[1] INTO specific_schema_name;
     SELECT regexp_replace(referencing_table, specific_schema_name || '.', '') INTO referencing_table;
@@ -38,6 +40,9 @@ BEGIN
     specific_schema_name := 'public';
   ELSIF TG_TABLE_NAME = 'companies' THEN
     specific_company_id := OLD.id;
+    IF TG_OP = 'DELETE' THEN
+      deleted_schema := OLD.schema_name;
+    END IF;
   ELSE
     BEGIN
       specific_company_id := OLD.company_id;
@@ -53,7 +58,9 @@ BEGIN
       FROM sharding.get_virtual_fk_referencing_tables(TG_TABLE_SCHEMA, referencing_table, specific_company_id, specific_schema_name)
   LOOP
       RAISE DEBUG 'table_to_check = %', table_to_check;
-      IF sharding.check_record_existence(table_to_check, trigger_condition) THEN
+      IF TG_TABLE_NAME = 'companies' AND TG_OP = 'DELETE' AND regexp_replace(table_to_check, '.'||referencing_table, '') = deleted_schema AND NOT common.schema_exists(deleted_schema) THEN
+        RAISE DEBUG 'Ignoring table % (schema no longer exists)', table_to_check;
+      ELSIF sharding.check_record_existence(table_to_check, trigger_condition) THEN
         -- the first value found invalidates the operation
         RAISE foreign_key_violation USING
           MESSAGE = format('delete on table %I.%I violates "%s"', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NAME),
