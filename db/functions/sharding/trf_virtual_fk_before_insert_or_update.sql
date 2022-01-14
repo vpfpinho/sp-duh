@@ -9,9 +9,17 @@ DECLARE
   referenced_table TEXT;
   referenced_columns TEXT[];
   record_existence_check_data JSONB;
+  _stack                      text;
 BEGIN
   -- RAISE DEBUG 'sharding.trf_virtual_fk_before_insert_or_update() TG_NAME:% TG_TABLE_SCHEMA:% TG_TABLE_NAME:% TG_NARGS:% TG_ARGV:%', TG_NAME, TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_NARGS, TG_ARGV;
   -- RAISE DEBUG 'sharding.trf_virtual_fk_before_insert_or_update() -        NEW: %', NEW;
+
+  GET DIAGNOSTICS _stack = PG_CONTEXT;
+  -- Blind faith in duplicate sales documents
+  IF _stack ~ 'commercial.duplicate_sales_documents' THEN
+    RETURN NEW;
+  END IF;
+
 
   referencing_columns := TG_ARGV[0];
   referenced_tables := TG_ARGV[1];
