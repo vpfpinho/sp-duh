@@ -1,5 +1,6 @@
 class CommercialImprovementsSpduh < ActiveRecord::Migration
   def up
+    execute %Q[ DELETE FROM public.schema_migrations WHERE version = '20220114115941'; ] # Bumped
     # SQLFILE: sp-duh/db/functions/sharding/trf_virtual_fk_before_insert_or_update.sql
     execute <<-'SQL'
       -- DROP FUNCTION IF EXISTS sharding.trf_virtual_fk_before_insert_or_update();
@@ -20,7 +21,7 @@ class CommercialImprovementsSpduh < ActiveRecord::Migration
 
         GET DIAGNOSTICS _stack = PG_CONTEXT;
         -- Blind faith in duplicate sales documents
-        IF _stack ~ 'commercial.duplicate_sales_documents' THEN
+        IF _stack ~ 'commercial.(duplicate|copy)_sales_documents' THEN
           RETURN NEW;
         END IF;
 
