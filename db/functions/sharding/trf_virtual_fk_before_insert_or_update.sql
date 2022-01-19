@@ -16,7 +16,7 @@ BEGIN
 
   GET DIAGNOSTICS _stack = PG_CONTEXT;
   -- Blind faith in duplicate sales documents
-  IF _stack ~ 'commercial.(duplicate|copy)_sales_documents' THEN
+  IF _stack ~ 'commercial.(duplicate|copy)_(sales|purchases)_documents' THEN
     RETURN NEW;
   END IF;
 
