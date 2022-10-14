@@ -199,7 +199,7 @@ BEGIN
         json_object->>'name',
         json_object->>'type',
         CASE WHEN (json_object->>'is_not_null')::BOOLEAN THEN ' NOT NULL' END,
-        CASE WHEN col_default_value IS NOT NULL THEN format(' DEFAULT %1$s', col_default_value) END,
+        CASE WHEN col_default_value IS NOT NULL THEN format(' DEFAULT %1$s', col_default_value) WHEN json_object->>'name' = 'company_id' THEN format(' DEFAULT %1$s', shard_company_id) END,
         CASE WHEN json_object->>'name' = 'company_id' THEN format(' CONSTRAINT "company_id must equal %1$s" CHECK (company_id = %1$s)', shard_company_id) END
       );
 
